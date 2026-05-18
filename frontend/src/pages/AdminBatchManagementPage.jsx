@@ -86,6 +86,7 @@ export default function AdminBatchManagementPage() {
   const [editingId, setEditingId] = useState("");
   const [status, setStatus] = useState({ type: "", message: "" });
   const [submitting, setSubmitting] = useState(false);
+  const [toast, setToast] = useState({ type: "", message: "" });
 
   const groupedBatches = useMemo(
     () =>
@@ -115,9 +116,21 @@ export default function AdminBatchManagementPage() {
 
   useEffect(() => {
     loadData().catch(() => {
-      setStatus({ type: "error", message: "Failed to load batch management data." });
+      setToast({ type: "error", message: "Failed to load batch management data." });
     });
   }, []);
+
+  useEffect(() => {
+    if (!toast.message) {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setToast({ type: "", message: "" });
+    }, toast.type === "error" ? 4200 : 2600);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [toast]);
 
   function handleLogout() {
     localStorage.removeItem("adminToken");
@@ -168,7 +181,7 @@ export default function AdminBatchManagementPage() {
       }
 
       if (!response.ok) {
-        setStatus({
+        setToast({
           type: "error",
           message: data.message || "Failed to save batch. Check that the backend is restarted and reachable."
         });
@@ -177,12 +190,12 @@ export default function AdminBatchManagementPage() {
 
       await loadData();
       resetForm();
-      setStatus({
+      setToast({
         type: "success",
         message: editingId ? "Batch updated successfully." : "Batch created successfully."
       });
     } catch (error) {
-      setStatus({
+      setToast({
         type: "error",
         message:
           error instanceof TypeError
@@ -211,7 +224,7 @@ export default function AdminBatchManagementPage() {
       }
 
       if (!response.ok) {
-        setStatus({ type: "error", message: data.message || "Failed to delete batch." });
+        setToast({ type: "error", message: data.message || "Failed to delete batch." });
         return;
       }
 
@@ -221,9 +234,9 @@ export default function AdminBatchManagementPage() {
         resetForm();
       }
 
-      setStatus({ type: "success", message: "Batch deleted successfully." });
+      setToast({ type: "success", message: "Batch deleted successfully." });
     } catch (error) {
-      setStatus({
+      setToast({
         type: "error",
         message:
           error instanceof TypeError
@@ -258,17 +271,17 @@ export default function AdminBatchManagementPage() {
       }
 
       if (!response.ok) {
-        setStatus({ type: "error", message: data.message || "Failed to update batch status." });
+        setToast({ type: "error", message: data.message || "Failed to update batch status." });
         return;
       }
 
       await loadData();
-      setStatus({
+      setToast({
         type: "success",
         message: batch.evaluationOpen === false ? "Batch unlocked successfully." : "Batch locked successfully."
       });
     } catch (error) {
-      setStatus({
+      setToast({
         type: "error",
         message:
           error instanceof TypeError
@@ -280,6 +293,20 @@ export default function AdminBatchManagementPage() {
 
   return (
     <main className="admin-dashboard-shell admin-dashboard-app">
+      {toast.message ? (
+        <div
+          className={`admin-toast ${toast.type === "error" ? "admin-toast-error" : "admin-toast-success"}`}
+          role="status"
+          aria-live="polite"
+        >
+          <div className="admin-toast-icon">{toast.type === "error" ? "!" : "OK"}</div>
+          <div>
+            <strong>{toast.type === "error" ? "Action needed" : "Success"}</strong>
+            <span>{toast.message}</span>
+          </div>
+        </div>
+      ) : null}
+
       <header className="admin-topbar">
         <div className="admin-topbar-brand">
           <div className="admin-brand-lockup admin-brand-lockup-compact">
@@ -297,12 +324,6 @@ export default function AdminBatchManagementPage() {
           </button>
         </div>
       </header>
-
-      {status.message ? (
-        <p className={`admin-inline-status ${status.type === "error" ? "admin-inline-error" : "admin-inline-success"}`}>
-          {status.message}
-        </p>
-      ) : null}
 
       <div className="admin-workspace">
         <aside className="admin-sidebar">

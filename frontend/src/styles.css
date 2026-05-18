@@ -374,6 +374,86 @@ textarea:disabled {
   border: 1px solid #cbe9d8;
 }
 
+.admin-toast {
+  position: fixed;
+  top: 0.85rem;
+  right: 0.85rem;
+  z-index: 80;
+  width: min(calc(100% - 1rem), 360px);
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 0.7rem;
+  align-items: center;
+  padding: 0.72rem 0.8rem;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  box-shadow: 0 16px 28px rgba(22, 53, 90, 0.12);
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(10px);
+}
+
+.admin-toast-icon {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+.admin-toast strong,
+.admin-toast span {
+  display: block;
+}
+
+.admin-toast strong {
+  font-size: 0.86rem;
+  line-height: 1.2;
+}
+
+.admin-toast span {
+  margin-top: 0.12rem;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.admin-toast-success {
+  border-color: #cbe9d8;
+  background: rgba(248, 255, 251, 0.98);
+}
+
+.admin-toast-success .admin-toast-icon {
+  background: linear-gradient(180deg, #35b66b, #1f8f53);
+}
+
+.admin-toast-success strong {
+  color: #155a38;
+}
+
+.admin-toast-success span {
+  color: #3e7054;
+}
+
+.admin-toast-error {
+  border-color: #f1cbc2;
+  background: rgba(255, 247, 245, 0.98);
+}
+
+.admin-toast-error .admin-toast-icon {
+  background: linear-gradient(180deg, #ef8d78, #d75b4e);
+}
+
+.admin-toast-error strong {
+  color: #933f31;
+}
+
+.admin-toast-error span {
+  color: #8e6056;
+}
+
 .admin-dashboard-hero {
   display: grid;
   gap: 1rem;
@@ -1767,6 +1847,20 @@ th {
   .success-toast-icon {
     width: 36px;
     height: 36px;
+  }
+
+  .admin-toast {
+    top: 0.7rem;
+    right: 0.5rem;
+    width: calc(100% - 1rem);
+    grid-template-columns: 34px 1fr;
+    gap: 0.6rem;
+    padding: 0.68rem 0.74rem;
+  }
+
+  .admin-toast-icon {
+    width: 34px;
+    height: 34px;
   }
 
   .floating-action-bar {
