@@ -2,6 +2,9 @@
   "name": "tessbin-evaluation",
   "private": true,
   "type": "module",
+  "scripts": {
+    "build": "npm --prefix frontend install && npm --prefix frontend run build"
+  },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
