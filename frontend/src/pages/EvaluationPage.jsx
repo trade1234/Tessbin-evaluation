@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import TesbinnLogo from "../components/TesbinnLogo.jsx";
+import tesbinnLogo from "../assets/tesbinn-logo.png";
 import { overallOptions, ratingLabels, sections, sourceOptions } from "../data/formOptions.js";
 
 const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
@@ -753,16 +753,12 @@ export default function EvaluationPage() {
           >
             <span>&lt;</span>
           </button>
-          <button type="button" className="hero-icon-button" aria-label="Help">
-            <span>?</span>
-          </button>
+          <div className="hero-logo-shell" aria-label="Tesbinn logo">
+            <img src={tesbinnLogo} alt="Tesbinn" className="hero-logo-image" />
+          </div>
         </div>
 
         <div className="hero-copy">
-          <div className="app-brand-lockup">
-            <TesbinnLogo className="app-brand-logo" title="Tesbinn logo" />
-            <span className="app-brand-name">TESBINN</span>
-          </div>
           <h1>{activeStep.title}</h1>
           <p>{activeStep.subtitle}</p>
         </div>

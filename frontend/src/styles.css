@@ -191,13 +191,6 @@ textarea:disabled {
   height: 34px;
 }
 
-.app-brand-name {
-  color: rgba(255, 255, 255, 0.94);
-  font-size: 0.82rem;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-}
-
 .admin-auth-card,
 .admin-dashboard-hero,
 .admin-filter-card,
@@ -937,6 +930,25 @@ textarea:disabled {
   font-weight: 700;
 }
 
+.hero-logo-shell {
+  width: 46px;
+  height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+}
+
+.hero-logo-image {
+  width: 30px;
+  height: 30px;
+  display: block;
+  object-fit: contain;
+}
+
 .hero-copy {
   position: relative;
   z-index: 1;
@@ -949,10 +961,6 @@ textarea:disabled {
   line-height: 1.06;
   letter-spacing: -0.03em;
   font-weight: 800;
-}
-
-.app-brand-lockup {
-  margin-bottom: 0.7rem;
 }
 
 .hero-copy p {
