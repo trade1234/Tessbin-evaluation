@@ -1,3 +1,7 @@
+// Friendly root route
+app.get("/", (_req, res) => {
+  res.send("Backend is running.");
+});
 import "dotenv/config";
 import cors from "cors";
 import express from "express";
