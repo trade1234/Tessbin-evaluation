@@ -68,7 +68,7 @@ router.get("/batches", async (_req, res) => {
 });
 
 router.post("/batches", async (req, res) => {
-  const { courseId, batchName, trainingDate, sessionType, sessionLabel, evaluationOpen } = req.body;
+  const { courseId, batchName, trainingDate, sessionType, sessionLabel, evaluationOpen, instructorName } = req.body;
   const course = getCourseDefinition(courseId);
 
   if (!course) {
@@ -105,14 +105,15 @@ router.post("/batches", async (req, res) => {
     trainingDate: dateValue,
     sessionType: sessionType || "Regular",
     sessionLabel: sessionLabel?.trim() || `${sessionType || "Regular"} - ${dateValue.toLocaleDateString("en-US")}`,
-    evaluationOpen: evaluationOpen !== false
+    evaluationOpen: evaluationOpen !== false,
+    instructorName: instructorName?.trim() || ""
   });
 
   res.status(201).json({ batch: created });
 });
 
 router.put("/batches/:id", async (req, res) => {
-  const { courseId, batchName, trainingDate, sessionType, sessionLabel, evaluationOpen } = req.body;
+  const { courseId, batchName, trainingDate, sessionType, sessionLabel, evaluationOpen, instructorName } = req.body;
   const course = getCourseDefinition(courseId);
 
   if (!course) {
@@ -147,7 +148,8 @@ router.put("/batches/:id", async (req, res) => {
       trainingDate: dateValue,
       sessionType: sessionType || "Regular",
       sessionLabel: sessionLabel?.trim() || `${sessionType || "Regular"} - ${dateValue.toLocaleDateString("en-US")}`,
-      evaluationOpen: evaluationOpen !== false
+      evaluationOpen: evaluationOpen !== false,
+      instructorName: instructorName?.trim() || ""
     },
     { new: true, runValidators: true }
   );

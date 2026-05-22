@@ -22,7 +22,8 @@ function createInitialForm() {
     trainingDate: "",
     sessionType: "Regular",
     sessionLabel: "",
-    evaluationOpen: true
+    evaluationOpen: true,
+    instructorName: ""
   };
 }
 
@@ -150,7 +151,8 @@ export default function AdminBatchManagementPage() {
       trainingDate: new Date(batch.trainingDate).toISOString().slice(0, 10),
       sessionType: batch.sessionType || "Regular",
       sessionLabel: batch.sessionLabel || "",
-      evaluationOpen: batch.evaluationOpen !== false
+      evaluationOpen: batch.evaluationOpen !== false,
+      instructorName: batch.instructorName || ""
     });
     setEditingId(batch._id);
     setStatus({ type: "", message: "" });
@@ -403,6 +405,14 @@ export default function AdminBatchManagementPage() {
                 <span>Open this session for evaluation</span>
               </label>
 
+              <label className="admin-field">
+                <span>Instructor Name</span>
+                <input
+                  value={form.instructorName}
+                  onChange={(event) => setForm((current) => ({ ...current, instructorName: event.target.value }))}
+                  placeholder="e.g. John Doe"
+                />
+              </label>
               <div className="admin-sidebar-actions">
                 <button className="admin-primary-button" type="submit" disabled={submitting}>
                   {submitting ? "Saving..." : editingId ? "Update Batch" : "Create Batch"}
@@ -442,6 +452,11 @@ export default function AdminBatchManagementPage() {
                             <span>
                               {(batch.sessionLabel || batch.sessionType || "Session")} | {formatDateLabel(batch.trainingDate)} | {batch.evaluationOpen === false ? "Closed" : "Open"}
                             </span>
+                            {batch.instructorName && (
+                              <span style={{ display: "block", color: "#68798b", fontSize: "0.95em" }}>
+                                Instructor: {batch.instructorName}
+                              </span>
+                            )}
                           </div>
                           <div className="admin-batch-actions">
                             <button

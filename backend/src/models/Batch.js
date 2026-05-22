@@ -12,7 +12,8 @@ const batchSchema = new mongoose.Schema(
       default: "Regular"
     },
     sessionLabel: { type: String, trim: true, default: "" },
-    evaluationOpen: { type: Boolean, default: true }
+    evaluationOpen: { type: Boolean, default: true },
+    instructorName: { type: String, trim: true, default: "" }
   },
   { timestamps: true }
 );

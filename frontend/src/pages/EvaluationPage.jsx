@@ -507,6 +507,13 @@ export default function EvaluationPage() {
               </select>
             </label>
 
+            {/* Show instructor name if available for the selected batch */}
+            {selectedBatch?.instructorName && (
+              <div style={{ margin: "0.5em 0 0.5em 0", color: "#18324d", fontWeight: 500 }}>
+                Instructor: {selectedBatch.instructorName}
+              </div>
+            )}
+
             <label className="app-field">
               <span>Email Address</span>
               <input
