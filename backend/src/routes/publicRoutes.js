@@ -3,6 +3,7 @@ import { getCourseDefinition, getTrainingCatalog } from "../data/catalogService.
 import { overallOptions, ratingLabels, sections, sourceOptions } from "../data/questions.js";
 import { Evaluation } from "../models/Evaluation.js";
 import { Batch } from "../models/Batch.js";
+import { sendEvaluationSubmittedEmail } from "../services/emailService.js";
 
 const router = Router();
 
@@ -47,6 +48,12 @@ router.post("/evaluations", async (req, res) => {
     sessionLabel: batch.sessionLabel || batch.batchName,
     trainingDate: batch.trainingDate
   });
+
+  try {
+    await sendEvaluationSubmittedEmail(evaluation);
+  } catch (error) {
+    console.error("Failed to send evaluation notification email:", error);
+  }
 
   return res.status(201).json({
     id: evaluation._id,

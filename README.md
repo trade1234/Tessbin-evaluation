@@ -30,6 +30,12 @@ JWT_SECRET=change-this-secret
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=change-this-password
 CLIENT_URL=http://localhost:5173
+SMTP_HOST=mail.tesbinn.com
+SMTP_PORT=465
+SMTP_USER=feedback@tesbinn.com
+SMTP_PASS=your-email-password
+EMAIL_FROM=feedback@tesbinn.com
+EMAIL_TO=feedback@tesbinn.com
 ```
 
 3. Start the backend:
@@ -74,6 +80,12 @@ JWT_SECRET=your-jwt-secret
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=your-admin-password
 CLIENT_URL=https://your-vercel-domain.vercel.app
+SMTP_HOST=mail.tesbinn.com
+SMTP_PORT=465
+SMTP_USER=feedback@tesbinn.com
+SMTP_PASS=your-email-password
+EMAIL_FROM=feedback@tesbinn.com
+EMAIL_TO=feedback@tesbinn.com
 ```
 
 ### Important Notes
