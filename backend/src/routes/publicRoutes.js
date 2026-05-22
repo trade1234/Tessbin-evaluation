@@ -24,13 +24,14 @@ router.get("/metadata", async (_req, res) => {
 
 router.post("/evaluations", async (req, res) => {
   const payload = req.body;
+  const traineeEmail = (payload.traineeEmail || "").trim().toLowerCase();
   const course = getCourseDefinition(payload.courseId);
 
   if (!course) {
     return res.status(400).json({ message: "Invalid course selection." });
   }
 
-  if (!emailPattern.test((payload.traineeEmail || "").trim())) {
+  if (!emailPattern.test(traineeEmail)) {
     return res.status(400).json({ message: "A valid email address is required." });
   }
 
@@ -46,6 +47,7 @@ router.post("/evaluations", async (req, res) => {
 
   const evaluation = await Evaluation.create({
     ...payload,
+    traineeEmail,
     courseName: course.courseName,
     batchId: batch.batchId,
     batchName: batch.batchName,
@@ -58,6 +60,10 @@ router.post("/evaluations", async (req, res) => {
     await sendEvaluationSubmittedEmail(evaluation);
   } catch (error) {
     console.error("Failed to send evaluation notification email:", error);
+    return res.status(500).json({
+      id: evaluation._id,
+      message: "Evaluation was saved, but the email notification failed. Please check the SMTP mailbox credentials."
+    });
   }
 
   return res.status(201).json({
