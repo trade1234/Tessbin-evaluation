@@ -30,6 +30,7 @@ JWT_SECRET=change-this-secret
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=change-this-password
 CLIENT_URL=http://localhost:5173
+CLIENT_URLS=
 SMTP_HOST=mail.tesbinn.com
 SMTP_PORT=465
 SMTP_USER=feedback@tesbinn.com
@@ -80,6 +81,7 @@ JWT_SECRET=your-jwt-secret
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=your-admin-password
 CLIENT_URL=https://your-vercel-domain.vercel.app
+CLIENT_URLS=https://optional-extra-domain.vercel.app,https://optional-custom-domain.com
 SMTP_HOST=mail.tesbinn.com
 SMTP_PORT=465
 SMTP_USER=feedback@tesbinn.com
@@ -91,6 +93,7 @@ EMAIL_TO=feedback@tesbinn.com
 ### Important Notes
 
 - `VITE_API_URL` must be `/api` in Vercel, not `http://localhost:5000/api`
+- For preview deployments, keep `VITE_API_URL=/api` so the frontend calls the API on the same deployment origin
 - redeploy after changing Vercel environment variables
 - the backend will fail in Vercel if `MONGODB_URI` or `JWT_SECRET` is missing
 - if you use preview deployments, you may want to relax or update `CLIENT_URL`

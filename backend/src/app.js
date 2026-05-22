@@ -8,28 +8,34 @@ const app = express();
 const allowedOrigins = new Set(
   [
     process.env.CLIENT_URL,
+    ...(process.env.CLIENT_URLS || "").split(",").map((origin) => origin.trim()),
     "http://localhost:5173",
     "http://localhost:3000"
   ].filter(Boolean)
 );
 
+function isAllowedOrigin(origin) {
+  if (!origin) {
+    return true;
+  }
+
+  return allowedOrigins.has(origin) || origin.endsWith(".vercel.app");
+}
+
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin) {
-        callback(null, true);
-        return;
-      }
-
-      if (allowedOrigins.has(origin) || origin.endsWith(".vercel.app")) {
-        callback(null, true);
+      if (isAllowedOrigin(origin)) {
+        callback(null, origin || true);
         return;
       }
 
       callback(new Error("CORS origin not allowed."));
-    }
+    },
+    credentials: false
   })
 );
+app.options("*", cors());
 app.use(express.json({ limit: "1mb" }));
 
 app.get("/", (_req, res) => {
