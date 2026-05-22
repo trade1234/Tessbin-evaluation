@@ -49,6 +49,7 @@ function buildEvaluationEmail(evaluation) {
     `Course: ${evaluation.courseName}`,
     `Session: ${evaluation.sessionLabel || evaluation.batchName}`,
     `Batch ID: ${evaluation.batchId}`,
+    `Trainee email: ${evaluation.traineeEmail}`,
     `Training date: ${formatDate(evaluation.trainingDate)}`,
     `Overall rating: ${evaluation.overallRating || "Not provided"}`,
     `Heard from: ${evaluation.heardFrom || "Not provided"}${evaluation.heardFromOther ? ` - ${evaluation.heardFromOther}` : ""}`,
@@ -63,6 +64,27 @@ function buildEvaluationEmail(evaluation) {
   ].join("\n");
 }
 
+function buildTraineeConfirmationEmail(evaluation) {
+  return [
+    "Dear trainee,",
+    "",
+    "Thank you for submitting your training evaluation.",
+    "",
+    `Course: ${evaluation.courseName}`,
+    `Session: ${evaluation.sessionLabel || evaluation.batchName}`,
+    `Training date: ${formatDate(evaluation.trainingDate)}`,
+    "",
+    "Your feedback has been received by TradeEthiopia School of Business and Innovation.",
+    "",
+    "Please collect your Certificate and COC form from your trainer after submitting your feedback.",
+    "",
+    "For direct feedback, call +251929243367 or +251904944444.",
+    "Email: feedback@tesbinn.com",
+    "",
+    "Thank you sincerely!"
+  ].join("\n");
+}
+
 export async function sendEvaluationSubmittedEmail(evaluation) {
   if (!isEmailConfigured()) {
     console.warn("Email notification skipped because SMTP environment variables are incomplete.");
@@ -71,10 +93,19 @@ export async function sendEvaluationSubmittedEmail(evaluation) {
 
   const transporter = createTransporter();
 
-  await transporter.sendMail({
-    from: process.env.EMAIL_FROM,
-    to: process.env.EMAIL_TO,
-    subject: `New evaluation submitted: ${evaluation.courseName}`,
-    text: buildEvaluationEmail(evaluation)
-  });
+  await Promise.all([
+    transporter.sendMail({
+      from: process.env.EMAIL_FROM,
+      to: process.env.EMAIL_TO,
+      replyTo: evaluation.traineeEmail,
+      subject: `New evaluation submitted: ${evaluation.courseName}`,
+      text: buildEvaluationEmail(evaluation)
+    }),
+    transporter.sendMail({
+      from: process.env.EMAIL_FROM,
+      to: evaluation.traineeEmail,
+      subject: "Your evaluation feedback was received",
+      text: buildTraineeConfirmationEmail(evaluation)
+    })
+  ]);
 }

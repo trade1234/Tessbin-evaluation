@@ -33,6 +33,7 @@ const evaluationSchema = new mongoose.Schema(
   {
     courseId: { type: String, required: true, trim: true },
     courseName: { type: String, required: true, trim: true },
+    traineeEmail: { type: String, required: true, trim: true, lowercase: true },
     batchId: { type: String, trim: true, default: "" },
     batchName: { type: String, trim: true, default: "" },
     sessionType: { type: String, trim: true, default: "" },

@@ -10,6 +10,7 @@ function createInitialForm() {
   return {
     courseId: "",
     batchId: "",
+    traineeEmail: "",
     ratings: Object.fromEntries(
       sections.flatMap((section) => section.questions.map((question) => [question.key, ""]))
     ),
@@ -166,6 +167,7 @@ const stepConfigs = [
 ];
 
 const sectionMap = Object.fromEntries(sections.map((section) => [section.key, section]));
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function formatSessionLabel(batch) {
   if (batch.sessionLabel?.trim()) {
@@ -286,7 +288,8 @@ export default function EvaluationPage() {
         label: "Training Information",
         value: [
           selectedCourse?.courseName || "No course selected",
-          selectedBatch ? formatSessionLabel(selectedBatch) : "No session selected"
+          selectedBatch ? formatSessionLabel(selectedBatch) : "No session selected",
+          form.traineeEmail || "No email added"
         ].join(" | "),
         editStep: 0
       },
@@ -370,7 +373,7 @@ export default function EvaluationPage() {
 
   function validateStep(stepKey = activeStep.key) {
     if (stepKey === "info") {
-      return Boolean(form.courseId && form.batchId);
+      return Boolean(form.courseId && form.batchId && emailPattern.test(form.traineeEmail.trim()));
     }
 
     if (sectionMap[stepKey]) {
@@ -500,6 +503,17 @@ export default function EvaluationPage() {
                   </option>
                 ))}
               </select>
+            </label>
+
+            <label className="app-field">
+              <span>Email Address</span>
+              <input
+                required
+                type="email"
+                placeholder="Enter your email address"
+                value={form.traineeEmail}
+                onChange={(event) => setForm((current) => ({ ...current, traineeEmail: event.target.value }))}
+              />
             </label>
           </div>
         </section>

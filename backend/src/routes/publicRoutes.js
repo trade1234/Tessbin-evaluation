@@ -6,6 +6,7 @@ import { Batch } from "../models/Batch.js";
 import { sendEvaluationSubmittedEmail } from "../services/emailService.js";
 
 const router = Router();
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 router.get("/metadata", async (_req, res) => {
   const catalog = await getTrainingCatalog();
@@ -27,6 +28,10 @@ router.post("/evaluations", async (req, res) => {
 
   if (!course) {
     return res.status(400).json({ message: "Invalid course selection." });
+  }
+
+  if (!emailPattern.test((payload.traineeEmail || "").trim())) {
+    return res.status(400).json({ message: "A valid email address is required." });
   }
 
   const batch = await Batch.findOne({ batchId: payload.batchId, courseId: payload.courseId }).lean();
