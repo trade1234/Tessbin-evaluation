@@ -4,6 +4,7 @@ import { overallOptions, ratingLabels, sections, sourceOptions } from "../data/f
 
 const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 const draftStorageKey = "training-evaluation-draft-v1";
+const googleReviewUrl = "https://g.page/r/CWgOATTV5eTTEBM/review";
 
 function createInitialForm() {
   return {
@@ -67,6 +68,40 @@ function SourceOptionGrid({ options, value, onChange }) {
           <span className="source-option-title">{option}</span>
         </label>
       ))}
+    </div>
+  );
+}
+
+function TraineeHeaderNotice() {
+  return (
+    <div className="trainee-header-notice">
+      <div className="trainee-notice-language" lang="am">
+        <p>ውድ ሰልጣኞቻችን የናንተ አስተያየትና ግምገማ ለኛ በጣም አስፈላጊ ነው።</p>
+        <p>
+          አስተያየቶን ሲጨርሱ ሊንኩን ተጭነው{" "}
+          <a href={googleReviewUrl} target="_blank" rel="noreferrer">
+            TradeEthiopia School of Business and Innovation
+          </a>{" "}
+          Google ላይ ኮከቦችን በመስጠት ያበረታቱን።
+        </p>
+        <p>እባክዎ አስተያየትዎን እንደጨረሱ ከአሰልጣኞት የሰርተፊኬት እና COC ፎርም ይውሰዱ።</p>
+        <p>ከልብ እናመሰግናለን!</p>
+      </div>
+
+      <div className="trainee-notice-language">
+        <p>Dear our trainees, your feedback and evaluation are very important to us.</p>
+        <p>
+          After completing your feedback, please click the link below and support{" "}
+          <a href={googleReviewUrl} target="_blank" rel="noreferrer">
+            TradeEthiopia School of Business and Innovation
+          </a>{" "}
+          by giving us stars and a review on Google.
+        </p>
+        <p>Please collect your Certificate and COC form from your trainer after submitting your feedback.</p>
+        <p>Call +251929243367 | +251904944444 for direct call feedback.</p>
+        <p>E-Mail: feedback@tesbinn.com</p>
+        <p>Thank you sincerely!</p>
+      </div>
     </div>
   );
 }
@@ -762,6 +797,8 @@ export default function EvaluationPage() {
           <h1>{activeStep.title}</h1>
           <p>{activeStep.subtitle}</p>
         </div>
+
+        <TraineeHeaderNotice />
 
         <div className={`hero-art ${activeStep.heroClass}`}>
           <div className="hero-orb hero-orb-large" />

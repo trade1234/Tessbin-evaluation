@@ -970,6 +970,43 @@ textarea:disabled {
   line-height: 1.48;
 }
 
+.trainee-header-notice {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding: 0.82rem 0.88rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.09);
+  backdrop-filter: blur(12px);
+}
+
+.trainee-notice-language {
+  display: grid;
+  gap: 0.42rem;
+}
+
+.trainee-notice-language + .trainee-notice-language {
+  padding-top: 0.72rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.trainee-notice-language p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.93);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.trainee-notice-language a {
+  color: #ffffff;
+  font-weight: 800;
+  text-decoration-color: rgba(255, 255, 255, 0.58);
+  text-underline-offset: 3px;
+}
+
 .hero-art {
   position: absolute;
   right: 0.8rem;
@@ -1708,6 +1745,10 @@ th {
 
   .hero-copy {
     max-width: 360px;
+  }
+
+  .trainee-header-notice {
+    max-width: 480px;
   }
 
   .hero-art {
