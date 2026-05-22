@@ -11,6 +11,7 @@ function createInitialForm() {
     courseId: "",
     batchId: "",
     traineeEmail: "",
+    traineePhoneNumber: "",
     ratings: Object.fromEntries(
       sections.flatMap((section) => section.questions.map((question) => [question.key, ""]))
     ),
@@ -289,7 +290,8 @@ export default function EvaluationPage() {
         value: [
           selectedCourse?.courseName || "No course selected",
           selectedBatch ? formatSessionLabel(selectedBatch) : "No session selected",
-          form.traineeEmail || "No email added"
+          form.traineeEmail || "No email added",
+          form.traineePhoneNumber || "No phone number added"
         ].join(" | "),
         editStep: 0
       },
@@ -513,6 +515,16 @@ export default function EvaluationPage() {
                 placeholder="Enter your email address"
                 value={form.traineeEmail}
                 onChange={(event) => setForm((current) => ({ ...current, traineeEmail: event.target.value }))}
+              />
+            </label>
+
+            <label className="app-field">
+              <span>Phone Number</span>
+              <input
+                type="tel"
+                placeholder="Enter your phone number"
+                value={form.traineePhoneNumber}
+                onChange={(event) => setForm((current) => ({ ...current, traineePhoneNumber: event.target.value }))}
               />
             </label>
           </div>

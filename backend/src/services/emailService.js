@@ -63,6 +63,7 @@ function buildEvaluationEmail(evaluation) {
     `Session: ${evaluation.sessionLabel || evaluation.batchName}`,
     `Session type: ${evaluation.sessionType || "Not provided"}`,
     `Trainee email: ${evaluation.traineeEmail}`,
+    `Trainee phone number: ${evaluation.traineePhoneNumber || "Not provided"}`,
     `Training date: ${formatDate(evaluation.trainingDate)}`,
     `Submitted at: ${evaluation.createdAt ? new Date(evaluation.createdAt).toLocaleString("en-US") : "Not available"}`,
     "",
