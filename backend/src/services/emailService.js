@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { sections } from "../data/questions.js";
 
 function isEmailConfigured() {
   return Boolean(
@@ -42,15 +43,33 @@ function buildEvaluationEmail(evaluation) {
       (item, index) =>
         `${index + 1}. ${item.name || "No name"} | ${item.phoneNumber || "No phone"} | ${item.emailAddress || "No email"} | ${item.address || "No address"}`
     );
+  const ratings = sections.flatMap((section) => [
+    "",
+    section.title,
+    ...section.questions.map((question) => {
+      const value = evaluation.ratings?.[question.key] || "Not provided";
+      return `- ${question.label}: ${value}`;
+    })
+  ]);
 
   return [
     "A new training evaluation has been submitted.",
     "",
-    `Course: ${evaluation.courseName}`,
-    `Session: ${evaluation.sessionLabel || evaluation.batchName}`,
+    "Training Information",
+    `Course ID: ${evaluation.courseId}`,
+    `Course name: ${evaluation.courseName}`,
     `Batch ID: ${evaluation.batchId}`,
+    `Batch name: ${evaluation.batchName || "Not provided"}`,
+    `Session: ${evaluation.sessionLabel || evaluation.batchName}`,
+    `Session type: ${evaluation.sessionType || "Not provided"}`,
     `Trainee email: ${evaluation.traineeEmail}`,
     `Training date: ${formatDate(evaluation.trainingDate)}`,
+    `Submitted at: ${evaluation.createdAt ? new Date(evaluation.createdAt).toLocaleString("en-US") : "Not available"}`,
+    "",
+    "Ratings",
+    ...ratings,
+    "",
+    "Final Evaluation",
     `Overall rating: ${evaluation.overallRating || "Not provided"}`,
     `Heard from: ${evaluation.heardFrom || "Not provided"}${evaluation.heardFromOther ? ` - ${evaluation.heardFromOther}` : ""}`,
     "",
