@@ -1,121 +1,119 @@
-# Digital Training Evaluation System
+# TESBINN Digital Training Evaluation System
 
-Mobile-first evaluation system for Trade Ethiopia training sessions.
+A mobile-first training evaluation application for TradeEthiopia School of Business and Innovation. Trainees submit structured feedback for an open course session, and administrators manage sessions, review analytics, and export the underlying records.
 
-## Tech Stack
+## Capabilities
 
-- Frontend: React + Vite
-- Backend: Node.js + Express
-- Database: MongoDB Atlas
-- Auth: JWT admin login
+- Four-page evaluation form with local draft recovery
+- Course and open-session selection backed by MongoDB
+- Required-rating and optional-field validation on both client and server
+- Trainee and internal email notifications when SMTP is configured
+- JWT-protected administrator console
+- Dashboard filters, aggregate ratings, comments, and recent submissions
+- Batch/session creation, editing, opening, closing, and safe deletion
+- UTF-8 CSV export with complete session, trainee, rating, comment, and referral data
+- Responsive English and Amharic trainee experience
+- One-project Vercel deployment for the React client and Express API
 
-## Project Structure
+## Architecture
 
-- `frontend/`: React client for trainees and admins
-- `backend/`: Express API, MongoDB models, CSV export
-- `api/`: Vercel serverless entrypoint for the backend
-- `vercel.json`: Vercel routing for frontend and backend in one deployment
-
-## Local Setup
-
-### Backend
-
-1. Create `backend/.env` from `backend/.env.example`.
-2. Set:
-
-```env
-PORT=5000
-MONGODB_URI=your-mongodb-connection-string
-JWT_SECRET=change-this-secret
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=change-this-password
-CLIENT_URL=http://localhost:5173
-CLIENT_URLS=
-SMTP_HOST=mail.tesbinn.com
-SMTP_PORT=465
-SMTP_USER=feedback@tesbinn.com
-SMTP_PASS=your-email-password
-EMAIL_FROM=feedback@tesbinn.com
-EMAIL_TO=feedback@tesbinn.com
+```text
+frontend/  React + Vite single-page client
+backend/   Express API, MongoDB models, validation, email, and tests
+api/       Vercel serverless adapter for the Express application
+shared/    Questionnaire definition shared by the frontend and backend
 ```
 
-3. Start the backend:
+The browser uses `/api/public/*` for trainee operations and `/api/admin/*` for authenticated administration. MongoDB stores batches and evaluations. The first successful database connection seeds the default sessions only when the batch collection is empty.
+
+## Requirements
+
+- Node.js 20.19 or newer
+- npm
+- MongoDB (local or Atlas)
+- Optional SMTP account for notifications
+
+## Local setup
+
+1. Install dependencies:
+
+   ```bash
+   npm install
+   npm --prefix frontend install
+   ```
+
+2. Copy `backend/.env.example` to `backend/.env` and set at least:
+
+   ```env
+   MONGODB_URI=mongodb://127.0.0.1:27017/tesbinn-evaluation
+   JWT_SECRET=replace-with-a-long-random-secret
+   ADMIN_USERNAME=admin
+   ADMIN_PASSWORD=replace-with-a-strong-password
+   CLIENT_URL=http://localhost:5173
+   ```
+
+3. To enable email, also configure `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_FROM`, and `EMAIL_TO`. A submission remains successful if SMTP is unavailable; the failure is logged without asking the trainee to submit again.
+
+4. Copy `frontend/.env.example` to `frontend/.env`.
+
+5. Run the API and client in separate terminals:
+
+   ```bash
+   npm run dev:backend
+   npm --prefix frontend run dev
+   ```
+
+   Alternatively, from inside `backend/`, run `npm run dev`. The backend package contains scripts only; dependencies remain centralized at the repository root.
+
+The trainee form is at `http://localhost:5173/`; the admin login is at `http://localhost:5173/admin/login`.
+
+## Verification
 
 ```bash
-cd backend
-npm install
-npm run dev
+npm test
+npm run build
 ```
 
-### Frontend
+`npm test` runs the backend validation/filter/CSV safety suite. `npm run build` creates the production frontend bundle in `frontend/dist`.
 
-1. Create `frontend/.env` from `frontend/.env.example`.
-2. Set:
+## Vercel deployment
 
-```env
-VITE_API_URL=http://localhost:5000/api
-```
-
-3. Start the frontend:
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-## Vercel Deployment
-
-This repo is configured for one Vercel project:
-
-- `frontend/` builds the React app
-- `api/index.js` runs the Express backend as a serverless function
-- `vercel.json` sends `/api/*` to the backend and all other routes to the React app
-
-### Required Vercel Environment Variables
+The root `vercel.json` builds `frontend/` and routes `/api/*` to `api/[...all].js`. Configure these variables for Production and any Preview environments that need the API:
 
 ```env
 VITE_API_URL=/api
 MONGODB_URI=your-mongodb-connection-string
-JWT_SECRET=your-jwt-secret
+JWT_SECRET=your-long-random-secret
 ADMIN_USERNAME=admin
-ADMIN_PASSWORD=your-admin-password
-CLIENT_URL=https://your-vercel-domain.vercel.app
-CLIENT_URLS=https://optional-extra-domain.vercel.app,https://optional-custom-domain.com
-SMTP_HOST=mail.tesbinn.com
+ADMIN_PASSWORD=your-strong-password
+CLIENT_URL=https://your-production-domain.example
+CLIENT_URLS=https://an-additional-domain.example
+SMTP_HOST=mail.example.com
 SMTP_PORT=465
-SMTP_USER=feedback@tesbinn.com
+SMTP_USER=feedback@example.com
 SMTP_PASS=your-email-password
-EMAIL_FROM=feedback@tesbinn.com
-EMAIL_TO=feedback@tesbinn.com
+EMAIL_FROM=feedback@example.com
+EMAIL_TO=feedback@example.com
 ```
 
-### Important Notes
+`VERCEL_URL` and `VERCEL_BRANCH_URL` are recognized automatically for same-deployment CORS. Add custom origins to `CLIENT_URL` or the comma-separated `CLIENT_URLS`; arbitrary Vercel origins are not trusted.
 
-- `VITE_API_URL` must be `/api` in Vercel, not `http://localhost:5000/api`
-- For preview deployments, keep `VITE_API_URL=/api` so the frontend calls the API on the same deployment origin
-- redeploy after changing Vercel environment variables
-- the backend will fail in Vercel if `MONGODB_URI` or `JWT_SECRET` is missing
-- if you use preview deployments, you may want to relax or update `CLIENT_URL`
+## API summary
 
-## Features
+Public:
 
-- Anonymous evaluation form
-- Course and session selection
-- Admin login
-- Batch/session management
-- CSV export
-- Summary metrics and rating bars
+- `GET /api/health`
+- `GET /api/public/metadata`
+- `POST /api/public/evaluations`
 
-## Scripts
+Administrator:
 
-### Backend
+- `POST /api/admin/login`
+- `GET /api/admin/catalog`
+- `GET|POST /api/admin/batches`
+- `PUT|DELETE /api/admin/batches/:id`
+- `GET /api/admin/evaluations`
+- `GET /api/admin/summary`
+- `GET /api/admin/export`
 
-- `npm run dev`: start backend in development mode
-- `npm start`: start backend in production mode
-
-### Frontend
-
-- `npm run dev`: start frontend in development mode
-- `npm run build`: build frontend for production
-- `npm run preview`: preview frontend production build locally
+Admin endpoints after login require `Authorization: Bearer <token>`. Evaluation, summary, and export endpoints accept `courseId`, `batchId`, `dateFrom`, and `dateTo` query filters; dates use `YYYY-MM-DD`.

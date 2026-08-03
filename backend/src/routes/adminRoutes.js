@@ -1,50 +1,49 @@
 import { Router } from "express";
+import crypto from "node:crypto";
+import { rateLimit } from "express-rate-limit";
 import jwt from "jsonwebtoken";
 import { getCourseDefinition, getTrainingCatalog } from "../data/catalogService.js";
-import { overallOptions, ratingValueMap, sections } from "../data/questions.js";
+import { overallOptions, ratingValueMap, sections } from "../../../shared/formDefinition.js";
 import { requireAdminAuth } from "../middleware/auth.js";
 import { Batch } from "../models/Batch.js";
 import { Evaluation } from "../models/Evaluation.js";
+import { buildEvaluationFilters, toCsvValue } from "../utils/validation.js";
 
 const router = Router();
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: { message: "Too many login attempts. Please try again later." }
+});
 
-function buildFilters(query) {
-  const filters = {};
-
-  if (query.courseId) {
-    filters.courseId = query.courseId;
+function getFilters(req, res) {
+  const result = buildEvaluationFilters(req.query);
+  if (result.error) {
+    res.status(400).json({ message: result.error });
+    return null;
   }
-
-  if (query.batchId) {
-    filters.batchId = query.batchId;
-  }
-
-  if (query.dateFrom || query.dateTo) {
-    filters.trainingDate = {};
-    if (query.dateFrom) {
-      filters.trainingDate.$gte = new Date(query.dateFrom);
-    }
-    if (query.dateTo) {
-      filters.trainingDate.$lte = new Date(query.dateTo);
-    }
-  }
-
-  return filters;
+  return result.filters;
 }
 
-function toCsvValue(value) {
-  const stringValue = value == null ? "" : String(value);
-  return `"${stringValue.replaceAll('"', '""')}"`;
+function secureEqual(value, expected) {
+  if (typeof value !== "string" || typeof expected !== "string") {
+    return false;
+  }
+  const valueDigest = crypto.createHash("sha256").update(value).digest();
+  const expectedDigest = crypto.createHash("sha256").update(expected).digest();
+  return crypto.timingSafeEqual(valueDigest, expectedDigest);
 }
 
-router.post("/login", (req, res) => {
+router.post("/login", loginLimiter, (req, res) => {
   const { username, password } = req.body;
 
-  if (!process.env.JWT_SECRET) {
-    return res.status(500).json({ message: "JWT_SECRET is not configured." });
+  if (!process.env.JWT_SECRET || !process.env.ADMIN_USERNAME || !process.env.ADMIN_PASSWORD) {
+    return res.status(503).json({ message: "Admin authentication is not configured." });
   }
 
-  if (username !== process.env.ADMIN_USERNAME || password !== process.env.ADMIN_PASSWORD) {
+  if (!secureEqual(username, process.env.ADMIN_USERNAME) || !secureEqual(password, process.env.ADMIN_PASSWORD)) {
     return res.status(401).json({ message: "Invalid admin credentials." });
   }
 
@@ -179,13 +178,15 @@ router.delete("/batches/:id", async (req, res) => {
 });
 
 router.get("/evaluations", async (req, res) => {
-  const filters = buildFilters(req.query);
+  const filters = getFilters(req, res);
+  if (!filters) return;
   const evaluations = await Evaluation.find(filters).sort({ createdAt: -1 }).lean();
   res.json({ evaluations });
 });
 
 router.get("/summary", async (req, res) => {
-  const filters = buildFilters(req.query);
+  const filters = getFilters(req, res);
+  if (!filters) return;
   const evaluations = await Evaluation.find(filters).lean();
   const ratingKeys = sections.flatMap((section) => section.questions.map((question) => question.key));
   const ratingTotals = {};
@@ -205,7 +206,9 @@ router.get("/summary", async (req, res) => {
         ratingCounts[key] += 1;
       }
     }
-    overallCounts[evaluation.overallRating] += 1;
+    if (Object.hasOwn(overallCounts, evaluation.overallRating)) {
+      overallCounts[evaluation.overallRating] += 1;
+    }
   }
 
   const questionAverages = sections.flatMap((section) =>
@@ -228,61 +231,65 @@ router.get("/summary", async (req, res) => {
 });
 
 router.get("/export", async (req, res) => {
-  const filters = buildFilters(req.query);
+  const filters = getFilters(req, res);
+  if (!filters) return;
   const evaluations = await Evaluation.find(filters).sort({ createdAt: -1 }).lean();
   const headers = [
     "Submitted At",
     "Course",
     "Batch",
+    "Session Type",
+    "Session Label",
+    "Instructor",
     "Training Date",
-    "Objective of the training",
-    "Practice to my needs and interest",
-    "Well organized",
-    "Useful visual aids and handouts",
-    "Instructor's knowledge",
-    "Instructor's presentation style",
-    "Instructor covered the material clearly",
-    "Instructor responded well to questions",
-    "Instructor's ability to relate theory to practice",
-    "Training room preparation",
-    "Location of the training",
-    "Duration of the training",
-    "Participation Factors",
+    "Trainee Email",
+    "Trainee Phone Number",
+    "Content: Was the training objective clear and easy to understand?",
+    "Content: Was the training useful for your work?",
+    "Content: Was the training well organized?",
+    "Content: Were the training materials (slides, handouts, visuals) helpful?",
+    "Trainer: Was the training objective clear and easy to understand?",
+    "Trainer: Was the training useful for your work?",
+    "Trainer: Was the training well organized?",
+    "Trainer: Were the training materials (slides, handouts, visuals) helpful?",
     "Improvement Suggestions",
-    "Follow-up Trainings",
     "Heard From",
     "Heard From Other",
-    "Overall Rating"
+    "Overall Rating",
+    "Referrals"
   ];
 
   const rows = evaluations.map((item) => [
     item.createdAt,
     item.courseName,
     item.batchName,
+    item.sessionType,
+    item.sessionLabel,
+    item.instructorName,
     item.trainingDate?.toISOString?.().slice(0, 10) || "",
-    item.ratings.objectiveOfTraining,
-    item.ratings.practicalToNeeds,
-    item.ratings.wellOrganized,
-    item.ratings.visualAids,
-    item.ratings.instructorKnowledge,
-    item.ratings.presentationStyle,
-    item.ratings.coveredClearly,
-    item.ratings.respondedToQuestions,
-    item.ratings.theoryToPractice,
-    item.ratings.roomPreparation,
-    item.ratings.location,
-    item.ratings.duration,
-    item.participationFactors,
+    item.traineeEmail,
+    item.traineePhoneNumber,
+    item.ratings?.objectiveOfTraining,
+    item.ratings?.practicalToNeeds,
+    item.ratings?.wellOrganized,
+    item.ratings?.visualAids,
+    item.ratings?.trainerObjectiveClear,
+    item.ratings?.trainerUsefulForWork,
+    item.ratings?.trainerWellOrganized,
+    item.ratings?.trainerMaterialsHelpful,
     item.improvementSuggestions,
-    item.followUpTrainings,
     item.heardFrom,
     item.heardFromOther,
-    item.overallRating
+    item.overallRating,
+    (item.referrals || [])
+      .filter((referral) => referral.name || referral.phoneNumber || referral.address || referral.emailAddress)
+      .map((referral) => [referral.name, referral.phoneNumber, referral.emailAddress, referral.address].filter(Boolean).join(" | "))
+      .join("; ")
   ]);
 
-  const csv = [headers, ...rows].map((row) => row.map(toCsvValue).join(",")).join("\n");
+  const csv = `\uFEFF${[headers, ...rows].map((row) => row.map(toCsvValue).join(",")).join("\r\n")}`;
 
-  res.setHeader("Content-Type", "text/csv");
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
   res.setHeader("Content-Disposition", 'attachment; filename="evaluations.csv"');
   res.send(csv);
 });

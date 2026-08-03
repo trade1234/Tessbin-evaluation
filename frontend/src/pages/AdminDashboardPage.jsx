@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
 import SummaryBar from "../components/SummaryBar.jsx";
 import TesbinnLogo from "../components/TesbinnLogo.jsx";
+import { Link, useNavigate } from "../lib/router.jsx";
 
 const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
@@ -76,16 +76,6 @@ export default function AdminDashboardPage() {
     }, {})
   ).sort((left, right) => new Date(right.trainingDate) - new Date(left.trainingDate));
 
-  const participationInsights = evaluations
-    .filter((item) => item.participationFactors?.trim())
-    .slice(0, 5)
-    .map((item) => ({
-      id: `${item._id}-participation`,
-      courseName: item.courseName,
-      trainingDate: item.trainingDate,
-      text: item.participationFactors
-    }));
-
   const improvementInsights = evaluations
     .filter((item) => item.improvementSuggestions?.trim())
     .slice(0, 5)
@@ -94,16 +84,6 @@ export default function AdminDashboardPage() {
       courseName: item.courseName,
       trainingDate: item.trainingDate,
       text: item.improvementSuggestions
-    }));
-
-  const followUpInsights = evaluations
-    .filter((item) => item.followUpTrainings?.trim())
-    .slice(0, 5)
-    .map((item) => ({
-      id: `${item._id}-followup`,
-      courseName: item.courseName,
-      trainingDate: item.trainingDate,
-      text: item.followUpTrainings
     }));
 
   async function loadData() {
@@ -123,6 +103,10 @@ export default function AdminDashboardPage() {
       return;
     }
 
+    if ([catalogResponse, summaryResponse, evaluationsResponse].some((response) => !response.ok)) {
+      throw new Error("Dashboard request failed.");
+    }
+
     const [catalogData, summaryData, evaluationsData] = await Promise.all([
       catalogResponse.json(),
       summaryResponse.json(),
@@ -132,6 +116,7 @@ export default function AdminDashboardPage() {
     setCatalog(catalogData.catalog || []);
     setSummary(summaryData);
     setEvaluations(evaluationsData.evaluations || []);
+    setError("");
   }
 
   useEffect(() => {
@@ -374,29 +359,7 @@ export default function AdminDashboardPage() {
             </article>
           </section>
 
-          <section className="admin-feedback-grid">
-            <article className="admin-panel-card">
-              <div className="admin-section-head">
-                <div>
-                  <p className="admin-kicker">Participation</p>
-                  <h2>Engagement Factors</h2>
-                </div>
-              </div>
-              <div className="admin-text-list">
-                {participationInsights.length ? (
-                  participationInsights.map((item) => (
-                    <article key={item.id} className="admin-text-card">
-                      <strong>{item.courseName}</strong>
-                      <span>{formatDateLabel(item.trainingDate)}</span>
-                      <p>{truncateText(item.text)}</p>
-                    </article>
-                  ))
-                ) : (
-                  <p className="admin-empty-note">No engagement factor comments were submitted in the current scope.</p>
-                )}
-              </div>
-            </article>
-
+          <section className="admin-feedback-grid admin-feedback-grid-single">
             <article className="admin-panel-card">
               <div className="admin-section-head">
                 <div>
@@ -419,27 +382,6 @@ export default function AdminDashboardPage() {
               </div>
             </article>
 
-            <article className="admin-panel-card">
-              <div className="admin-section-head">
-                <div>
-                  <p className="admin-kicker">Follow-up</p>
-                  <h2>Requested Follow-up Training</h2>
-                </div>
-              </div>
-              <div className="admin-text-list">
-                {followUpInsights.length ? (
-                  followUpInsights.map((item) => (
-                    <article key={item.id} className="admin-text-card">
-                      <strong>{item.courseName}</strong>
-                      <span>{formatDateLabel(item.trainingDate)}</span>
-                      <p>{truncateText(item.text)}</p>
-                    </article>
-                  ))
-                ) : (
-                  <p className="admin-empty-note">No follow-up training requests were submitted in the current scope.</p>
-                )}
-              </div>
-            </article>
           </section>
 
           <section className="admin-panel-card">

@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import TesbinnLogo from "../components/TesbinnLogo.jsx";
+import { useNavigate } from "../lib/router.jsx";
 
 const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
@@ -8,26 +8,34 @@ export default function AdminLoginPage() {
   const navigate = useNavigate();
   const [credentials, setCredentials] = useState({ username: "", password: "" });
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(event) {
     event.preventDefault();
     setError("");
+    setIsSubmitting(true);
 
-    const response = await fetch(`${apiUrl}/admin/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(credentials)
-    });
+    try {
+      const response = await fetch(`${apiUrl}/admin/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(credentials)
+      });
 
-    const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
-    if (!response.ok) {
-      setError(data.message || "Login failed.");
-      return;
+      if (!response.ok) {
+        setError(data.message || "Login failed.");
+        return;
+      }
+
+      localStorage.setItem("adminToken", data.token);
+      navigate("/admin");
+    } catch {
+      setError("Unable to reach the server. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    localStorage.setItem("adminToken", data.token);
-    navigate("/admin");
   }
 
   return (
@@ -83,8 +91,8 @@ export default function AdminLoginPage() {
 
             {error ? <p className="admin-inline-status admin-inline-error">{error}</p> : null}
 
-            <button className="admin-primary-button" type="submit">
-              Access Dashboard
+            <button className="admin-primary-button" type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Signing in..." : "Access Dashboard"}
             </button>
           </form>
         </div>

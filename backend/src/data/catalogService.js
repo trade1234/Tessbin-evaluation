@@ -30,7 +30,8 @@ export async function getTrainingCatalog() {
       trainingDate: batch.trainingDate,
       sessionType: batch.sessionType || "Regular",
       sessionLabel: batch.sessionLabel || `${batch.batchName} - ${new Date(batch.trainingDate).toLocaleDateString("en-US")}`,
-      evaluationOpen: batch.evaluationOpen !== false
+      evaluationOpen: batch.evaluationOpen !== false,
+      instructorName: batch.instructorName || ""
     });
     accumulator[batch.courseId] = courseBatches;
     return accumulator;

@@ -1191,6 +1191,24 @@ textarea:disabled {
   padding: 0.9rem;
 }
 
+.mobile-section-heading {
+  margin-bottom: 0.85rem;
+}
+
+.mobile-section-heading h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.mobile-section-heading p {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
 .field-stack,
 .compact-field-stack,
 .question-list,
@@ -1850,6 +1868,10 @@ th {
 
   .admin-feedback-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .admin-feedback-grid-single {
+    grid-template-columns: 1fr;
   }
 
   .admin-batch-grid {

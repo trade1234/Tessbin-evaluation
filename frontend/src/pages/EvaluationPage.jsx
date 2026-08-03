@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import tesbinnLogo from "../assets/tesbinn-logo.png";
-import { overallOptions, ratingLabels, sections, sourceOptions } from "../data/formOptions.js";
+import { overallOptions, ratingLabels, sections, sourceOptions } from "../../../shared/formDefinition.js";
 
 const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-const draftStorageKey = "training-evaluation-draft-v1";
+const draftStorageKey = "training-evaluation-draft-v3";
 const googleReviewUrl = "https://g.page/r/CWgOATTV5eTTEBM/review";
 
 function createInitialForm() {
@@ -15,17 +15,8 @@ function createInitialForm() {
     ratings: Object.fromEntries(
       sections.flatMap((section) => section.questions.map((question) => [question.key, ""]))
     ),
-    participationFactors: "",
     improvementSuggestions: "",
-    followUpTrainings: "",
-    referrals: [
-      {
-        name: "",
-        phoneNumber: "",
-        address: "",
-        emailAddress: ""
-      }
-    ],
+    referrals: [],
     heardFrom: "",
     heardFromOther: "",
     overallRating: ""
@@ -110,50 +101,22 @@ function TraineeHeaderNotice() {
 
 const stepConfigs = [
   {
-    key: "info",
-    label: "Info",
-    title: "Training Information",
-    subtitle: "Provide the basic details about the training session you attended.",
+    key: "training",
+    label: "Training",
+    title: "Training Evaluation",
+    subtitle: "Provide the training information and complete the content and trainer ratings.",
     heroClass: "hero-art-info"
   },
   {
-    key: "content",
-    label: "Content",
-    title: "Training Content",
-    subtitle: "Rate the relevance, organization, and usefulness of the training content.",
-    heroClass: "hero-art-content"
-  },
-  {
-    key: "presentation",
-    label: "Trainer",
-    title: "Trainer Evaluation",
-    subtitle: "Rate the instructor's clarity, knowledge, and responsiveness.",
-    heroClass: "hero-art-trainer"
-  },
-  {
-    key: "facilities",
-    label: "Environment",
-    title: "Training Environment",
-    subtitle: "Rate the room setup, location, and overall training environment.",
-    heroClass: "hero-art-environment"
-  },
-  {
-    key: "comments",
-    label: "Comments",
-    title: "Comments and Suggestions",
-    subtitle: "Help improve future sessions with your comments and recommendations.",
+    key: "feedback",
+    label: "Feedback",
+    title: "Comments and Referrals",
+    subtitle: "Optionally share a comment or recommend people who may benefit from this training.",
     heroClass: "hero-art-comments"
   },
   {
-    key: "referrals",
-    label: "Referrals",
-    title: "Suggested People",
-    subtitle: "Recommend people who may benefit from this training opportunity.",
-    heroClass: "hero-art-referrals"
-  },
-  {
     key: "final",
-    label: "Final",
+    label: "Finally",
     title: "Final Evaluation",
     subtitle: "Tell us how you heard about us and give your overall rating.",
     heroClass: "hero-art-final"
@@ -226,7 +189,12 @@ export default function EvaluationPage() {
 
   useEffect(() => {
     fetch(`${apiUrl}/public/metadata`)
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Metadata request failed.");
+        }
+        return response.json();
+      })
       .then((data) => setCatalog(data.catalog || []))
       .catch(() => {
         setStatus({ type: "error", message: "Failed to load training metadata." });
@@ -298,32 +266,27 @@ export default function EvaluationPage() {
       {
         label: "Training Content",
         value: `${sectionMap.content.questions.length} questions answered`,
-        editStep: 1
+        editStep: 0
       },
       {
         label: "Trainer Evaluation",
         value: `${sectionMap.presentation.questions.length} questions answered`,
-        editStep: 2
-      },
-      {
-        label: "Training Environment",
-        value: `${sectionMap.facilities.questions.length} questions answered`,
-        editStep: 3
+        editStep: 0
       },
       {
         label: "Comments and Suggestions",
-        value: `${[form.participationFactors, form.improvementSuggestions, form.followUpTrainings].filter(Boolean).length} responses added`,
-        editStep: 4
+        value: form.improvementSuggestions ? "1 response added" : "No response added",
+        editStep: 1
       },
       {
         label: "Suggested People",
         value: `${form.referrals.filter((item) => item.name || item.phoneNumber || item.address || item.emailAddress).length} referrals added`,
-        editStep: 5
+        editStep: 1
       },
       {
         label: "Final Evaluation",
         value: form.overallRating ? `Overall rating: ${form.overallRating}` : "Not completed",
-        editStep: 6
+        editStep: 2
       }
     ],
     [form, selectedBatch, selectedCourse]
@@ -369,13 +332,14 @@ export default function EvaluationPage() {
   function removeReferral(index) {
     setForm((current) => ({
       ...current,
-      referrals: current.referrals.length === 1 ? current.referrals : current.referrals.filter((_, itemIndex) => itemIndex !== index)
+      referrals: current.referrals.filter((_, itemIndex) => itemIndex !== index)
     }));
   }
 
   function validateStep(stepKey = activeStep.key) {
     if (stepKey === "info") {
-      return Boolean(form.courseId && form.batchId && emailPattern.test(form.traineeEmail.trim()));
+      const email = form.traineeEmail.trim();
+      return Boolean(form.courseId && form.batchId && (!email || emailPattern.test(email)));
     }
 
     if (sectionMap[stepKey]) {
@@ -384,6 +348,10 @@ export default function EvaluationPage() {
 
     if (stepKey === "final") {
       return Boolean(form.heardFrom && form.overallRating && (form.heardFrom !== "Other" || form.heardFromOther.trim()));
+    }
+
+    if (stepKey === "training") {
+      return validateStep("info") && validateStep("content") && validateStep("presentation");
     }
 
     return true;
@@ -409,7 +377,7 @@ export default function EvaluationPage() {
   async function handleSubmit(event) {
     event.preventDefault();
 
-    if (!validateStep("info") || !validateStep("content") || !validateStep("presentation") || !validateStep("facilities") || !validateStep("final")) {
+    if (!validateStep("info") || !validateStep("content") || !validateStep("presentation") || !validateStep("final")) {
       setStatus({ type: "error", message: "Please complete all required steps before submitting." });
       return;
     }
@@ -465,9 +433,11 @@ export default function EvaluationPage() {
 
   function renderInfoStep() {
     return (
-      <>
-        <section className="mobile-section-card">
-          <div className="field-stack">
+      <section className="mobile-section-card">
+        <div className="mobile-section-heading">
+          <h2>Training Information</h2>
+        </div>
+        <div className="field-stack">
             <label className="app-field">
               <span>Course</span>
               <select
@@ -515,11 +485,10 @@ export default function EvaluationPage() {
             )}
 
             <label className="app-field">
-              <span>Email Address</span>
+              <span>Email Address (Optional)</span>
               <input
-                required
                 type="email"
-                placeholder="Enter your email address"
+                placeholder="Enter your email address if desired"
                 value={form.traineeEmail}
                 onChange={(event) => setForm((current) => ({ ...current, traineeEmail: event.target.value }))}
               />
@@ -534,17 +503,20 @@ export default function EvaluationPage() {
                 onChange={(event) => setForm((current) => ({ ...current, traineePhoneNumber: event.target.value }))}
               />
             </label>
-          </div>
-        </section>
+        </div>
+      </section>
+    );
+  }
 
-        <section className="tip-card">
-          <div className="tip-icon">i</div>
-          <div>
-            <h3>Why do we collect this information?</h3>
-            <p>This helps admins organize evaluations by course and class session while the internal batch stays attached automatically.</p>
-          </div>
-        </section>
-      </>
+  function renderInformationNotice() {
+    return (
+      <section className="tip-card">
+        <div className="tip-icon">i</div>
+        <div>
+          <h3>Why do we collect this information?</h3>
+          <p>This helps admins organize evaluations by course and class session while the internal batch stays attached automatically.</p>
+        </div>
+      </section>
     );
   }
 
@@ -553,6 +525,9 @@ export default function EvaluationPage() {
 
     return (
       <section className="mobile-section-card">
+        <div className="mobile-section-heading">
+          <h2>{section.title}</h2>
+        </div>
         <div className="question-list">
           {section.questions.map((question, index) => (
             <div key={question.key} className="question-item">
@@ -574,19 +549,13 @@ export default function EvaluationPage() {
   function renderCommentsStep() {
     return (
       <section className="mobile-section-card">
+        <div className="mobile-section-heading">
+          <h2>Comments and Suggestions</h2>
+          <p>Optional</p>
+        </div>
         <div className="field-stack">
           <label className="app-field">
-            <span>What factor would make training like this more participatory?</span>
-            <textarea
-              rows="4"
-              placeholder="Share your thoughts..."
-              value={form.participationFactors}
-              onChange={(event) => setForm((current) => ({ ...current, participationFactors: event.target.value }))}
-            />
-          </label>
-
-          <label className="app-field">
-            <span>Comments or suggestions to improve this training</span>
+            <span>Comments or suggestions to improve this training (Optional)</span>
             <textarea
               rows="4"
               placeholder="Share your suggestions..."
@@ -595,15 +564,6 @@ export default function EvaluationPage() {
             />
           </label>
 
-          <label className="app-field">
-            <span>Suggest other follow-up training sessions for day-to-day work</span>
-            <textarea
-              rows="4"
-              placeholder="Write your suggestions..."
-              value={form.followUpTrainings}
-              onChange={(event) => setForm((current) => ({ ...current, followUpTrainings: event.target.value }))}
-            />
-          </label>
         </div>
       </section>
     );
@@ -612,16 +572,21 @@ export default function EvaluationPage() {
   function renderReferralsStep() {
     return (
       <section className="mobile-section-card">
+        <div className="mobile-section-heading">
+          <h2>Suggested People</h2>
+          <p>Optional</p>
+        </div>
         <div className="referral-stack">
+          {!form.referrals.length ? (
+            <p className="admin-empty-note">Referrals are optional. Add one only if you would like to recommend someone.</p>
+          ) : null}
           {form.referrals.map((referral, index) => (
             <article key={index} className="referral-card-app">
               <div className="referral-card-head">
                 <h3>Referral {index + 1}</h3>
-                {form.referrals.length > 1 ? (
-                  <button type="button" className="inline-link danger-link" onClick={() => removeReferral(index)}>
-                    Remove
-                  </button>
-                ) : null}
+                <button type="button" className="inline-link danger-link" onClick={() => removeReferral(index)}>
+                  Remove
+                </button>
               </div>
 
               <div className="compact-field-stack">
@@ -661,7 +626,7 @@ export default function EvaluationPage() {
 
         {form.referrals.length < 6 ? (
           <button type="button" className="outline-action-button" onClick={addReferral}>
-            Add Another Referral
+            {form.referrals.length ? "Add Another Referral" : "Add Referral"}
           </button>
         ) : null}
       </section>
@@ -731,10 +696,24 @@ export default function EvaluationPage() {
   }
 
   function renderCurrentStep() {
-    if (activeStep.key === "info") return renderInfoStep();
-    if (sectionMap[activeStep.key]) return renderRatingsStep(activeStep.key);
-    if (activeStep.key === "comments") return renderCommentsStep();
-    if (activeStep.key === "referrals") return renderReferralsStep();
+    if (activeStep.key === "training") {
+      return (
+        <>
+          {renderInfoStep()}
+          {renderRatingsStep("content")}
+          {renderRatingsStep("presentation")}
+          {renderInformationNotice()}
+        </>
+      );
+    }
+    if (activeStep.key === "feedback") {
+      return (
+        <>
+          {renderCommentsStep()}
+          {renderReferralsStep()}
+        </>
+      );
+    }
     if (activeStep.key === "final") return renderFinalStep();
     return renderReviewStep();
   }
@@ -784,7 +763,7 @@ export default function EvaluationPage() {
             </article>
             <article className="success-note-card">
               <h3>Better learning outcomes</h3>
-              <p>We use the results to shape more relevant follow-up sessions.</p>
+              <p>We use the results to shape more relevant future sessions.</p>
             </article>
           </div>
         </section>

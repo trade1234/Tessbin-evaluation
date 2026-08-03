@@ -1,5 +1,8 @@
-import "dotenv/config";
-import app, { initializeApp } from "./app.js";
+import dotenv from "dotenv";
+
+dotenv.config({ path: new URL("../.env", import.meta.url) });
+
+const { default: app, initializeApp } = await import("./app.js");
 
 const port = process.env.PORT || 5000;
 

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
 import TesbinnLogo from "../components/TesbinnLogo.jsx";
+import { Link, useNavigate } from "../lib/router.jsx";
 
 const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
@@ -108,6 +108,10 @@ export default function AdminBatchManagementPage() {
       localStorage.removeItem("adminToken");
       navigate("/admin/login");
       return;
+    }
+
+    if ([catalogResponse, batchesResponse].some((response) => !response.ok)) {
+      throw new Error("Batch management request failed.");
     }
 
     const [catalogData, batchesData] = await Promise.all([catalogResponse.json(), batchesResponse.json()]);

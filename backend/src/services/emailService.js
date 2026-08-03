@@ -1,5 +1,5 @@
 import nodemailer from "nodemailer";
-import { sections } from "../data/questions.js";
+import { sections } from "../../../shared/formDefinition.js";
 
 function isEmailConfigured() {
   return Boolean(
@@ -20,7 +20,9 @@ function createTransporter() {
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS
-    }
+    },
+    disableFileAccess: true,
+    disableUrlAccess: true
   });
 }
 
@@ -62,7 +64,8 @@ function buildEvaluationEmail(evaluation) {
     `Batch name: ${evaluation.batchName || "Not provided"}`,
     `Session: ${evaluation.sessionLabel || evaluation.batchName}`,
     `Session type: ${evaluation.sessionType || "Not provided"}`,
-    `Trainee email: ${evaluation.traineeEmail}`,
+    `Instructor: ${evaluation.instructorName || "Not provided"}`,
+    `Trainee email: ${evaluation.traineeEmail || "Not provided"}`,
     `Trainee phone number: ${evaluation.traineePhoneNumber || "Not provided"}`,
     `Training date: ${formatDate(evaluation.trainingDate)}`,
     `Submitted at: ${evaluation.createdAt ? new Date(evaluation.createdAt).toLocaleString("en-US") : "Not available"}`,
@@ -75,9 +78,7 @@ function buildEvaluationEmail(evaluation) {
     `Heard from: ${evaluation.heardFrom || "Not provided"}${evaluation.heardFromOther ? ` - ${evaluation.heardFromOther}` : ""}`,
     "",
     "Comments",
-    `Participation factors: ${evaluation.participationFactors || "Not provided"}`,
     `Improvement suggestions: ${evaluation.improvementSuggestions || "Not provided"}`,
-    `Follow-up trainings: ${evaluation.followUpTrainings || "Not provided"}`,
     "",
     "Referrals",
     referrals.length ? referrals.join("\n") : "No referrals provided."
@@ -113,19 +114,24 @@ export async function sendEvaluationSubmittedEmail(evaluation) {
 
   const transporter = createTransporter();
 
-  await Promise.all([
-    transporter.sendMail({
+  const messages = [
+    {
       from: process.env.EMAIL_FROM,
       to: process.env.EMAIL_TO,
-      replyTo: evaluation.traineeEmail,
+      replyTo: evaluation.traineeEmail || undefined,
       subject: `New evaluation submitted: ${evaluation.courseName}`,
       text: buildEvaluationEmail(evaluation)
-    }),
-    transporter.sendMail({
+    }
+  ];
+
+  if (evaluation.traineeEmail) {
+    messages.push({
       from: process.env.EMAIL_FROM,
       to: evaluation.traineeEmail,
       subject: "Your evaluation feedback was received",
       text: buildTraineeConfirmationEmail(evaluation)
-    })
-  ]);
+    });
+  }
+
+  await Promise.all(messages.map((message) => transporter.sendMail(message)));
 }
