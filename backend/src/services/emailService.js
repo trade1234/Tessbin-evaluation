@@ -21,9 +21,9 @@ function createTransporter() {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS
     },
-    connectionTimeout: 8000,
-    greetingTimeout: 8000,
-    socketTimeout: 10000,
+    connectionTimeout: 2500,
+    greetingTimeout: 2500,
+    socketTimeout: 3000,
     disableFileAccess: true,
     disableUrlAccess: true
   });
@@ -136,5 +136,22 @@ export async function sendEvaluationSubmittedEmail(evaluation) {
     });
   }
 
-  await Promise.all(messages.map((message) => transporter.sendMail(message)));
+  let timer;
+  const timeoutPromise = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error("SMTP connection timeout (3s limit reached)")), 3000);
+  });
+
+  try {
+    await Promise.race([
+      Promise.all(messages.map((message) => transporter.sendMail(message))),
+      timeoutPromise
+    ]);
+  } catch (error) {
+    console.error("Failed or timed out sending evaluation notification email:", error.message || error);
+  } finally {
+    clearTimeout(timer);
+    try {
+      transporter.close();
+    } catch {}
+  }
 }
