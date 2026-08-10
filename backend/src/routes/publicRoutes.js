@@ -56,16 +56,9 @@ router.post("/evaluations", async (req, res) => {
     trainingDate: batch.trainingDate
   });
 
-  try {
-    await sendEvaluationSubmittedEmail(evaluation);
-  } catch (error) {
+  sendEvaluationSubmittedEmail(evaluation).catch((error) => {
     console.error("Failed to send evaluation notification email:", error);
-    return res.status(201).json({
-      id: evaluation._id,
-      message: "Evaluation submitted successfully. Email delivery is temporarily unavailable.",
-      emailDelivered: false
-    });
-  }
+  });
 
   return res.status(201).json({
     id: evaluation._id,

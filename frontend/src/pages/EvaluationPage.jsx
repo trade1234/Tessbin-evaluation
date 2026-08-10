@@ -389,7 +389,8 @@ export default function EvaluationPage() {
       const response = await fetch(`${apiUrl}/public/evaluations`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form)
+        body: JSON.stringify(form),
+        signal: AbortSignal.timeout(15000)
       });
 
       const raw = await response.text();
