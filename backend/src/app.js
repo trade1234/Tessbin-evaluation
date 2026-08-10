@@ -43,16 +43,17 @@ function isAllowedOrigin(origin) {
 app.use(
   cors({
     origin(origin, callback) {
-      if (isAllowedOrigin(origin)) {
-        callback(null, origin || true);
-        return;
+      if (!origin) {
+        return callback(null, true);
       }
-
-      callback(new Error("CORS origin not allowed."));
+      return callback(null, origin);
     },
-    credentials: false
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"]
   })
 );
+app.options("*", cors());
 app.use(express.json({ limit: "1mb" }));
 
 app.get("/", (_req, res) => {
