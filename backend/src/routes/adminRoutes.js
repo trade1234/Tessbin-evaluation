@@ -3,7 +3,7 @@ import crypto from "node:crypto";
 import { rateLimit } from "express-rate-limit";
 import jwt from "jsonwebtoken";
 import { getCourseDefinition, getTrainingCatalog } from "../data/catalogService.js";
-import { overallOptions, ratingValueMap, sections } from "../../../shared/formDefinition.js";
+import { overallOptions, ratingValueMap, sections } from "../data/formDefinition.js";
 import { requireAdminAuth } from "../middleware/auth.js";
 import { Batch } from "../models/Batch.js";
 import { Evaluation } from "../models/Evaluation.js";

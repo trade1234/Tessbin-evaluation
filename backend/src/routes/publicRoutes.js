@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { getCourseDefinition, getTrainingCatalog } from "../data/catalogService.js";
 import { defaultBatches } from "../data/catalog.js";
-import { overallOptions, ratingLabels, sections, sourceOptions } from "../../../shared/formDefinition.js";
+import { overallOptions, ratingLabels, sections, sourceOptions } from "../data/formDefinition.js";
 import { Evaluation } from "../models/Evaluation.js";
 import { Batch } from "../models/Batch.js";
 import { sendEvaluationSubmittedEmail } from "../services/emailService.js";

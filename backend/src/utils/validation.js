@@ -1,4 +1,4 @@
-import { overallOptions, ratingLabels, sections, sourceOptions } from "../../../shared/formDefinition.js";
+import { overallOptions, ratingLabels, sections, sourceOptions } from "../data/formDefinition.js";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;

@@ -1,5 +1,5 @@
 import nodemailer from "nodemailer";
-import { sections } from "../../../shared/formDefinition.js";
+import { sections } from "../data/formDefinition.js";
 
 function isEmailConfigured() {
   return Boolean(

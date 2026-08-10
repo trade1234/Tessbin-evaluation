@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { overallOptions, ratingLabels, sourceOptions } from "../../../shared/formDefinition.js";
+import { overallOptions, ratingLabels, sourceOptions } from "../data/formDefinition.js";
 
 const legacyRatingLabels = [...ratingLabels, "Very good", "Needs improvement", "Not applicable"];
 
