@@ -10,6 +10,19 @@ export default async function handler(req, res) {
     });
   }
 
+  if (req.url) {
+    const rawUrl = req.url;
+    if (rawUrl.includes("[...all]") || rawUrl.includes("[all]")) {
+      try {
+        const parsed = new URL(rawUrl, "http://localhost");
+        const paramVal = parsed.searchParams.get("0") || parsed.searchParams.get("all") || parsed.searchParams.get("match");
+        if (paramVal) {
+          req.url = paramVal.startsWith("/") ? paramVal : `/${paramVal}`;
+        }
+      } catch {}
+    }
+  }
+
   try {
     await initializedPromise;
     return app(req, res);
