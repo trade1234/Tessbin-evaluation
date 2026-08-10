@@ -52,7 +52,7 @@ The browser uses `/api/public/*` for trainee operations and `/api/admin/*` for a
    CLIENT_URL=http://localhost:5173
    ```
 
-3. To enable email, also configure `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_FROM`, and `EMAIL_TO`. A submission remains successful if SMTP is unavailable; the failure is logged without asking the trainee to submit again.
+3. To enable email, also configure `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_FROM`, and `EMAIL_TO`. A submission remains successful if SMTP is unavailable; the failure is logged without asking the trainee to submit again. `SMTP_TIMEOUT_MS` is optional and defaults to 10000 (allowed range: 3000-15000).
 
 4. Copy `frontend/.env.example` to `frontend/.env`.
 

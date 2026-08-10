@@ -6,7 +6,7 @@
     "dev:backend": "node --watch backend/src/server.js",
     "start:backend": "node backend/src/server.js",
     "build": "npm --prefix frontend run build",
-    "test": "node --test backend/test/validation.test.js",
+    "test": "node --test backend/test/validation.test.js backend/test/serverless.test.js",
     "check": "npm test && npm run build"
   },
   "dependencies": {

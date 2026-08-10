@@ -13,6 +13,8 @@ function isEmailConfigured() {
 }
 
 function createTransporter() {
+  const timeout = getSmtpTimeout();
+
   return nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port: Number(process.env.SMTP_PORT),
@@ -21,12 +23,19 @@ function createTransporter() {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS
     },
-    connectionTimeout: 2500,
-    greetingTimeout: 2500,
-    socketTimeout: 3000,
+    connectionTimeout: timeout,
+    greetingTimeout: timeout,
+    socketTimeout: timeout,
     disableFileAccess: true,
     disableUrlAccess: true
   });
+}
+
+function getSmtpTimeout() {
+  const configuredTimeout = Number(process.env.SMTP_TIMEOUT_MS);
+  return Number.isFinite(configuredTimeout)
+    ? Math.min(Math.max(configuredTimeout, 3000), 15000)
+    : 10000;
 }
 
 function formatDate(value) {
@@ -112,7 +121,7 @@ function buildTraineeConfirmationEmail(evaluation) {
 export async function sendEvaluationSubmittedEmail(evaluation) {
   if (!isEmailConfigured()) {
     console.warn("Email notification skipped because SMTP environment variables are incomplete.");
-    return;
+    return { delivered: false, reason: "not_configured" };
   }
 
   const transporter = createTransporter();
@@ -137,8 +146,9 @@ export async function sendEvaluationSubmittedEmail(evaluation) {
   }
 
   let timer;
+  const timeout = getSmtpTimeout();
   const timeoutPromise = new Promise((_, reject) => {
-    timer = setTimeout(() => reject(new Error("SMTP connection timeout (3s limit reached)")), 3000);
+    timer = setTimeout(() => reject(new Error(`SMTP connection timeout (${timeout}ms limit reached)`)), timeout);
   });
 
   try {
@@ -146,8 +156,10 @@ export async function sendEvaluationSubmittedEmail(evaluation) {
       Promise.all(messages.map((message) => transporter.sendMail(message))),
       timeoutPromise
     ]);
+    return { delivered: true };
   } catch (error) {
     console.error("Failed or timed out sending evaluation notification email:", error.message || error);
+    return { delivered: false, reason: "send_failed" };
   } finally {
     clearTimeout(timer);
     try {

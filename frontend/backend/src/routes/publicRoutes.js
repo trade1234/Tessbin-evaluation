@@ -1,4 +1,5 @@
 import { Router } from "express";
+import mongoose from "mongoose";
 import { getCourseDefinition, getTrainingCatalog } from "../data/catalogService.js";
 import { defaultBatches } from "../data/catalog.js";
 import { overallOptions, ratingLabels, sections, sourceOptions } from "../data/formDefinition.js";
@@ -36,11 +37,20 @@ router.post("/evaluations", async (req, res) => {
     return res.status(400).json({ message: "Invalid course selection." });
   }
 
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(503).json({
+      message: "The evaluation service is temporarily unavailable. Please try again shortly."
+    });
+  }
+
   let batch = null;
   try {
     batch = await Batch.findOne({ batchId: payload.batchId, courseId: payload.courseId }).lean();
   } catch (dbErr) {
-    console.warn("Failed to find batch in database, checking default batches:", dbErr.message);
+    console.error("Failed to find evaluation batch:", dbErr.message);
+    return res.status(503).json({
+      message: "The evaluation service is temporarily unavailable. Please try again shortly."
+    });
   }
 
   if (!batch) {
@@ -74,29 +84,18 @@ router.post("/evaluations", async (req, res) => {
       trainingDate: batch.trainingDate
     });
   } catch (createErr) {
-    console.warn("Evaluation.create failed, producing fallback evaluation object:", createErr.message);
-    evaluation = {
-      _id: "eval-" + Date.now(),
-      ...payload,
-      courseName: course.courseName,
-      batchId: batch.batchId,
-      batchName: batch.batchName,
-      sessionType: batch.sessionType || "Regular",
-      sessionLabel: batch.sessionLabel || batch.batchName,
-      instructorName: batch.instructorName || "",
-      trainingDate: batch.trainingDate,
-      createdAt: new Date()
-    };
+    console.error("Failed to save evaluation:", createErr.message);
+    return res.status(503).json({
+      message: "Your evaluation could not be saved. Please try again shortly."
+    });
   }
 
-  sendEvaluationSubmittedEmail(evaluation).catch((error) => {
-    console.error("Failed to send evaluation notification email:", error);
-  });
+  const emailResult = await sendEvaluationSubmittedEmail(evaluation);
 
   return res.status(201).json({
     id: evaluation._id,
     message: "Evaluation submitted successfully.",
-    emailDelivered: true
+    emailDelivered: emailResult.delivered
   });
 });
 

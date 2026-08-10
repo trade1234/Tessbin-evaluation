@@ -3,6 +3,10 @@ import { seedDefaultBatches } from "../data/catalogService.js";
 
 let connectionPromise;
 
+// A serverless request must never sit in Mongoose's default operation queue
+// after a cold-start connection has already failed.
+mongoose.set("bufferCommands", false);
+
 export async function connectToDatabase() {
   const mongoUri = process.env.MONGODB_URI;
 
@@ -18,8 +22,8 @@ export async function connectToDatabase() {
   if (!connectionPromise) {
     connectionPromise = mongoose
       .connect(mongoUri, {
-        serverSelectionTimeoutMS: 5000,
-        connectTimeoutMS: 5000
+        serverSelectionTimeoutMS: 4000,
+        connectTimeoutMS: 4000
       })
       .then(() => {
         console.log(`MongoDB connected: ${mongoose.connection.name}`);
