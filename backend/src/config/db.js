@@ -20,9 +20,9 @@ export async function connectToDatabase() {
         serverSelectionTimeoutMS: 5000,
         connectTimeoutMS: 5000
       })
-      .then(async () => {
-        await seedDefaultBatches();
+      .then(() => {
         console.log(`MongoDB connected: ${mongoose.connection.name}`);
+        seedDefaultBatches().catch((err) => console.error("Seeding error:", err));
         return mongoose.connection;
       })
       .catch((error) => {

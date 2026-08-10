@@ -390,7 +390,7 @@ export default function EvaluationPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
-        signal: AbortSignal.timeout(15000)
+        signal: AbortSignal.timeout(30000)
       });
 
       const raw = await response.text();
@@ -418,11 +418,13 @@ export default function EvaluationPage() {
         setIsSubmitted(true);
       }, 1400);
     } catch (error) {
+      const isTimeout = error?.name === "TimeoutError" || error?.name === "AbortError" || String(error?.message).includes("timed out");
       setStatus({
         type: "error",
-        message:
-          error instanceof TypeError
-            ? "Unable to reach the server. Make sure the backend is running on http://localhost:5000."
+        message: isTimeout
+          ? "The request timed out while connecting to the server. Please try again."
+          : error instanceof TypeError
+            ? "Unable to reach the server. Make sure the backend is running."
             : error instanceof Error
               ? error.message
               : "Submission failed. Please try again."
