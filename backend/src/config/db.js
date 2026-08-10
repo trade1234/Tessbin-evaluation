@@ -16,7 +16,10 @@ export async function connectToDatabase() {
 
   if (!connectionPromise) {
     connectionPromise = mongoose
-      .connect(mongoUri)
+      .connect(mongoUri, {
+        serverSelectionTimeoutMS: 5000,
+        connectTimeoutMS: 5000
+      })
       .then(async () => {
         await seedDefaultBatches();
         console.log(`MongoDB connected: ${mongoose.connection.name}`);
