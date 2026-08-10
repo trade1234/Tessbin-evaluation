@@ -21,7 +21,17 @@ export async function seedDefaultBatches() {
 }
 
 export async function getTrainingCatalog() {
-  const batches = await Batch.find({}).sort({ trainingDate: 1, batchName: 1 }).lean();
+  let batches = [];
+  try {
+    batches = await Batch.find({}).sort({ trainingDate: 1, batchName: 1 }).lean();
+  } catch (error) {
+    console.warn("Failed to query Batch collection, using defaultBatches:", error.message);
+  }
+
+  if (!batches || !batches.length) {
+    batches = defaultBatches;
+  }
+
   const batchMap = batches.reduce((accumulator, batch) => {
     const courseBatches = accumulator[batch.courseId] || [];
     courseBatches.push({
