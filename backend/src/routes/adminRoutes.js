@@ -39,11 +39,17 @@ function secureEqual(value, expected) {
 router.post("/login", loginLimiter, (req, res) => {
   const { username, password } = req.body;
 
-  if (!process.env.JWT_SECRET || !process.env.ADMIN_USERNAME || !process.env.ADMIN_PASSWORD) {
+  const expectedUser = (process.env.ADMIN_USERNAME || "").trim().toLowerCase();
+  const expectedPass = (process.env.ADMIN_PASSWORD || "").trim();
+
+  if (!process.env.JWT_SECRET || !expectedUser || !expectedPass) {
     return res.status(503).json({ message: "Admin authentication is not configured." });
   }
 
-  if (!secureEqual(username, process.env.ADMIN_USERNAME) || !secureEqual(password, process.env.ADMIN_PASSWORD)) {
+  const inputUser = (typeof username === "string" ? username : "").trim().toLowerCase();
+  const inputPass = typeof password === "string" ? password.trim() : "";
+
+  if (!secureEqual(inputUser, expectedUser) || !secureEqual(inputPass, expectedPass)) {
     return res.status(401).json({ message: "Invalid admin credentials." });
   }
 
