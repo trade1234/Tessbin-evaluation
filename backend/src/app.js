@@ -32,7 +32,12 @@ function isAllowedOrigin(origin) {
     return true;
   }
 
-  return allowedOrigins.has(normalizeOrigin(origin));
+  const normalized = normalizeOrigin(origin);
+  if (/^https:\/\/[a-zA-Z0-9-]+\.vercel\.app$/.test(normalized)) {
+    return true;
+  }
+
+  return allowedOrigins.has(normalized);
 }
 
 app.use(
@@ -54,14 +59,15 @@ app.get("/", (_req, res) => {
   res.send("Backend is running.");
 });
 
-app.get("/api/health", (_req, res) => {
+app.get(["/health", "/api/health"], (_req, res) => {
   res.json({ ok: true });
 });
 
-app.use("/api/public", publicRoutes);
-app.use("/api/admin", adminRoutes);
+app.use(["/api/public", "/public"], publicRoutes);
+app.use(["/api/admin", "/admin"], adminRoutes);
 
-app.use("/api", (_req, res) => {
+app.use(["/api", "/"], (_req, res, next) => {
+  if (res.headersSent) return next();
   res.status(404).json({ message: "API endpoint not found." });
 });
 
