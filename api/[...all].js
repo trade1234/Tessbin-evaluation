@@ -1,8 +1,13 @@
 import app, { initializeApp } from "../backend/src/app.js";
+import { waitUntil } from "@vercel/functions";
 
 let initialized = false;
 
 export default async function handler(req, res) {
+  // Expose Vercel's request-lifecycle helper to the Express routes. Long-running
+  // side effects (such as SMTP) can then finish without delaying the response.
+  req.vercelWaitUntil = waitUntil;
+
   try {
     if (!initialized) {
       await initializeApp();

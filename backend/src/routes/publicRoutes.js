@@ -90,9 +90,22 @@ router.post("/evaluations", async (req, res) => {
     });
   }
 
-  // Vercel may freeze the function immediately after the response. Await the
-  // already time-bounded SMTP operation so the notification can finish.
-  const emailResult = await sendEvaluationSubmittedEmail(evaluation);
+  const emailPromise = sendEvaluationSubmittedEmail(evaluation);
+
+  // On Vercel, keep SMTP alive as background work without making the trainee's
+  // request wait for an external mail server. The adapter installs this helper.
+  if (typeof req.vercelWaitUntil === "function") {
+    req.vercelWaitUntil(emailPromise);
+
+    return res.status(201).json({
+      id: evaluation._id,
+      message: "Evaluation submitted successfully.",
+      emailScheduled: true
+    });
+  }
+
+  // Local/server deployments do not have a serverless lifecycle helper.
+  const emailResult = await emailPromise;
 
   return res.status(201).json({
     id: evaluation._id,
