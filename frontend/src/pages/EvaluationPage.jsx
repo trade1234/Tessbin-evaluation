@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import tesbinnLogo from "../assets/tesbinn-logo.png";
 import { overallOptions, ratingLabels, sections, sourceOptions } from "../../../shared/formDefinition.js";
 
-const apiUrl = import.meta.env.VITE_API_URL || "/api";
+import { apiUrl } from "../config/api.js";
 const draftStorageKey = "training-evaluation-draft-v3";
 const googleReviewUrl = "https://g.page/r/CWgOATTV5eTTEBM/review";
 

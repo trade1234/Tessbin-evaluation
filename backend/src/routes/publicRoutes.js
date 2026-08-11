@@ -1,5 +1,6 @@
 import { Router } from "express";
 import mongoose from "mongoose";
+import { connectToDatabase } from "../config/db.js";
 import { getCourseDefinition, getTrainingCatalog } from "../data/catalogService.js";
 import { defaultBatches } from "../data/catalog.js";
 import { overallOptions, ratingLabels, sections, sourceOptions } from "../data/formDefinition.js";
@@ -35,6 +36,12 @@ router.post("/evaluations", async (req, res) => {
 
   if (!course) {
     return res.status(400).json({ message: "Invalid course selection." });
+  }
+
+  try {
+    await connectToDatabase();
+  } catch (dbInitErr) {
+    console.error("Failed to connect to database on evaluation submission:", dbInitErr.message);
   }
 
   if (mongoose.connection.readyState !== 1) {
@@ -110,7 +117,8 @@ router.post("/evaluations", async (req, res) => {
   return res.status(201).json({
     id: evaluation._id,
     message: "Evaluation submitted successfully.",
-    emailDelivered: emailResult.delivered
+    emailSent: emailResult.sent,
+    emailWarning: emailResult.reason
   });
 });
 

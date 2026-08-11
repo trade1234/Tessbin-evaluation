@@ -1,7 +1,6 @@
-import app, { initializeApp } from "../backend/src/app.js";
+import app from "../backend/src/app.js";
+import { connectToDatabase } from "../backend/src/config/db.js";
 import { waitUntil } from "@vercel/functions";
-
-let initialized = false;
 
 export default async function handler(req, res) {
   // Expose Vercel's request-lifecycle helper to the Express routes. Long-running
@@ -9,12 +8,9 @@ export default async function handler(req, res) {
   req.vercelWaitUntil = waitUntil;
 
   try {
-    if (!initialized) {
-      await initializeApp();
-      initialized = true;
-    }
+    await connectToDatabase();
   } catch (err) {
-    console.error("Vercel DB Init Warning:", err?.message || err);
+    console.error("Vercel DB Connection Error:", err?.message || err);
   }
 
   if (req.url && (req.url.includes("[...all]") || req.url.includes("[all]"))) {

@@ -2,7 +2,7 @@ import { useState } from "react";
 import TesbinnLogo from "../components/TesbinnLogo.jsx";
 import { useNavigate } from "../lib/router.jsx";
 
-const apiUrl = import.meta.env.VITE_API_URL || "/api";
+import { apiUrl } from "../config/api.js";
 
 export default function AdminLoginPage() {
   const navigate = useNavigate();

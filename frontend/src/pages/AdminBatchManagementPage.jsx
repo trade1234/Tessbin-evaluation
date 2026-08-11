@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import TesbinnLogo from "../components/TesbinnLogo.jsx";
 import { Link, useNavigate } from "../lib/router.jsx";
 
-const apiUrl = import.meta.env.VITE_API_URL || "/api";
+import { apiUrl } from "../config/api.js";
 
 function getAuthHeaders(includeJson = false) {
   return {

@@ -2,6 +2,9 @@
   "name": "tessbin-evaluation",
   "private": true,
   "type": "module",
+  "workspaces": [
+    "frontend"
+  ],
   "scripts": {
     "dev:backend": "node --watch backend/src/server.js",
     "start:backend": "node backend/src/server.js",

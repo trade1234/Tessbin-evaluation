@@ -56,6 +56,15 @@ app.use(
 app.options("*", cors());
 app.use(express.json({ limit: "1mb" }));
 
+app.use(async (_req, _res, next) => {
+  try {
+    await connectToDatabase();
+  } catch (err) {
+    console.error("DB connection error in Express middleware:", err?.message || err);
+  }
+  next();
+});
+
 app.get("/", (_req, res) => {
   res.send("Backend is running.");
 });
