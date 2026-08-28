@@ -1,6 +1,5 @@
 import { Router } from "express";
 import mongoose from "mongoose";
-import { connectToDatabase } from "../config/db.js";
 import { getCourseDefinition, getTrainingCatalog } from "../data/catalogService.js";
 import { defaultBatches } from "../data/catalog.js";
 import { overallOptions, ratingLabels, sections, sourceOptions } from "../data/formDefinition.js";
@@ -36,12 +35,6 @@ router.post("/evaluations", async (req, res) => {
 
   if (!course) {
     return res.status(400).json({ message: "Invalid course selection." });
-  }
-
-  try {
-    await connectToDatabase();
-  } catch (dbInitErr) {
-    console.error("Failed to connect to database on evaluation submission:", dbInitErr.message);
   }
 
   if (mongoose.connection.readyState !== 1) {
@@ -97,7 +90,10 @@ router.post("/evaluations", async (req, res) => {
     });
   }
 
-  const emailPromise = sendEvaluationSubmittedEmail(evaluation);
+  const emailPromise = sendEvaluationSubmittedEmail(evaluation).catch((error) => {
+    console.error("Failed to send evaluation notification email:", error?.message || error);
+    return { delivered: false, reason: "send_failed" };
+  });
 
   // On Vercel, keep SMTP alive as background work without making the trainee's
   // request wait for an external mail server. The adapter installs this helper.
@@ -111,14 +107,12 @@ router.post("/evaluations", async (req, res) => {
     });
   }
 
-  // Local/server deployments do not have a serverless lifecycle helper.
-  const emailResult = await emailPromise;
-
+  // Email is a side effect. Once the evaluation is stored, SMTP must not keep
+  // the trainee waiting or turn a successful save into an apparent failure.
   return res.status(201).json({
     id: evaluation._id,
     message: "Evaluation submitted successfully.",
-    emailSent: emailResult.sent,
-    emailWarning: emailResult.reason
+    emailScheduled: true
   });
 });
 

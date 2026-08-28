@@ -379,13 +379,15 @@ export default function EvaluationPage() {
 
     setStatus({ type: "", message: "" });
     setSubmitting(true);
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 15000);
 
     try {
       const response = await fetch(`${apiUrl}/public/evaluations`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
-        signal: AbortSignal.timeout(30000)
+        signal: controller.signal
       });
 
       const raw = await response.text();
@@ -411,7 +413,7 @@ export default function EvaluationPage() {
       successTimerRef.current = window.setTimeout(() => {
         setShowSuccessToast(false);
         setIsSubmitted(true);
-      }, 1400);
+      }, 600);
     } catch (error) {
       const isTimeout = error?.name === "TimeoutError" || error?.name === "AbortError" || String(error?.message).includes("timed out");
       setStatus({
@@ -425,6 +427,7 @@ export default function EvaluationPage() {
               : "Submission failed. Please try again."
       });
     } finally {
+      window.clearTimeout(timeoutId);
       setSubmitting(false);
     }
   }
