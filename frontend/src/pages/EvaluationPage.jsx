@@ -5,6 +5,7 @@ import { overallOptions, ratingLabels, sections, sourceOptions } from "../../../
 import { apiUrl } from "../config/api.js";
 const draftStorageKey = "training-evaluation-draft-v3";
 const googleReviewUrl = "https://g.page/r/CWgOATTV5eTTEBM/review";
+const submissionTimeoutMs = 60000;
 
 function createInitialForm() {
   return {
@@ -152,10 +153,8 @@ export default function EvaluationPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [showBottomActionBar, setShowBottomActionBar] = useState(false);
   const actionTriggerRef = useRef(null);
-  const successTimerRef = useRef(null);
 
   useEffect(() => {
     try {
@@ -236,14 +235,6 @@ export default function EvaluationPage() {
 
     return () => observer.disconnect();
   }, [currentStep, isSubmitted]);
-
-  useEffect(() => {
-    return () => {
-      if (successTimerRef.current) {
-        window.clearTimeout(successTimerRef.current);
-      }
-    };
-  }, []);
 
   const activeStep = stepConfigs[currentStep];
   const selectedCourse = catalog.find((item) => item.courseId === form.courseId);
@@ -380,7 +371,7 @@ export default function EvaluationPage() {
     setStatus({ type: "", message: "" });
     setSubmitting(true);
     const controller = new AbortController();
-    const timeoutId = window.setTimeout(() => controller.abort(), 15000);
+    const timeoutId = window.setTimeout(() => controller.abort(), submissionTimeoutMs);
 
     try {
       const response = await fetch(`${apiUrl}/public/evaluations`, {
@@ -409,11 +400,7 @@ export default function EvaluationPage() {
         message: "Thank you. Your evaluation has been submitted successfully."
       });
       window.localStorage.removeItem(draftStorageKey);
-      setShowSuccessToast(true);
-      successTimerRef.current = window.setTimeout(() => {
-        setShowSuccessToast(false);
-        setIsSubmitted(true);
-      }, 600);
+      setIsSubmitted(true);
     } catch (error) {
       const isTimeout = error?.name === "TimeoutError" || error?.name === "AbortError" || String(error?.message).includes("timed out");
       setStatus({
@@ -719,15 +706,11 @@ export default function EvaluationPage() {
   }
 
   function restartEvaluation() {
-    if (successTimerRef.current) {
-      window.clearTimeout(successTimerRef.current);
-    }
     window.localStorage.removeItem(draftStorageKey);
     setForm(createInitialForm());
     setCurrentStep(0);
     setStatus({ type: "", message: "" });
     setIsSubmitted(false);
-    setShowSuccessToast(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -779,16 +762,6 @@ export default function EvaluationPage() {
 
   return (
     <main className="mobile-app-shell">
-      {showSuccessToast ? (
-        <div className="success-toast" role="status" aria-live="polite">
-          <div className="success-toast-icon">OK</div>
-          <div>
-            <strong>Evaluation saved successfully</strong>
-            <span>Your responses have been recorded.</span>
-          </div>
-        </div>
-      ) : null}
-
       <section className="app-hero">
         <div className="app-top-row">
           <button
