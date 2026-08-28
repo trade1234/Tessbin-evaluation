@@ -22,16 +22,6 @@ export const sourceOptions = ["Facebook", "Telegram", "TikTok", "LinkedIn", "Oth
 
 export const sections = [
   {
-    key: "content",
-    title: "Content",
-    questions: [
-      { key: "objectiveOfTraining", label: "Was the training objective clear and easy to understand?" },
-      { key: "practicalToNeeds", label: "Was the training useful for your work?" },
-      { key: "wellOrganized", label: "Was the training well organized?" },
-      { key: "visualAids", label: "Were the training materials (slides, handouts, visuals) helpful?" }
-    ]
-  },
-  {
     key: "presentation",
     title: "Trainer Evaluation",
     questions: [

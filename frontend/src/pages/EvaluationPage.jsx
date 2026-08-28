@@ -104,7 +104,7 @@ const stepConfigs = [
     key: "training",
     label: "Training",
     title: "Training Evaluation",
-    subtitle: "Provide the training information and complete the content and trainer ratings.",
+    subtitle: "Provide the training information and complete the trainer ratings.",
     heroClass: "hero-art-info"
   },
   {
@@ -264,11 +264,6 @@ export default function EvaluationPage() {
         editStep: 0
       },
       {
-        label: "Training Content",
-        value: `${sectionMap.content.questions.length} questions answered`,
-        editStep: 0
-      },
-      {
         label: "Trainer Evaluation",
         value: `${sectionMap.presentation.questions.length} questions answered`,
         editStep: 0
@@ -351,7 +346,7 @@ export default function EvaluationPage() {
     }
 
     if (stepKey === "training") {
-      return validateStep("info") && validateStep("content") && validateStep("presentation");
+      return validateStep("info") && validateStep("presentation");
     }
 
     return true;
@@ -377,7 +372,7 @@ export default function EvaluationPage() {
   async function handleSubmit(event) {
     event.preventDefault();
 
-    if (!validateStep("info") || !validateStep("content") || !validateStep("presentation") || !validateStep("final")) {
+    if (!validateStep("info") || !validateStep("presentation") || !validateStep("final")) {
       setStatus({ type: "error", message: "Please complete all required steps before submitting." });
       return;
     }
@@ -703,7 +698,6 @@ export default function EvaluationPage() {
       return (
         <>
           {renderInfoStep()}
-          {renderRatingsStep("content")}
           {renderRatingsStep("presentation")}
           {renderInformationNotice()}
         </>

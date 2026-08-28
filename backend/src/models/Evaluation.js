@@ -15,10 +15,10 @@ const referralSchema = new mongoose.Schema(
 
 const ratingsSchema = new mongoose.Schema(
   {
-    objectiveOfTraining: { type: String, enum: legacyRatingLabels, required: true },
-    practicalToNeeds: { type: String, enum: legacyRatingLabels, required: true },
-    wellOrganized: { type: String, enum: legacyRatingLabels, required: true },
-    visualAids: { type: String, enum: legacyRatingLabels, required: true },
+    objectiveOfTraining: { type: String, enum: legacyRatingLabels },
+    practicalToNeeds: { type: String, enum: legacyRatingLabels },
+    wellOrganized: { type: String, enum: legacyRatingLabels },
+    visualAids: { type: String, enum: legacyRatingLabels },
     trainerObjectiveClear: { type: String, enum: ratingLabels, required: true },
     trainerUsefulForWork: { type: String, enum: ratingLabels, required: true },
     trainerWellOrganized: { type: String, enum: ratingLabels, required: true },

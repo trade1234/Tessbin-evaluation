@@ -33,10 +33,9 @@ test("evaluation validation returns a normalized allow-listed payload", () => {
   assert.equal(Object.hasOwn(result.value, "followUpTrainings"), false);
 });
 
-test("the active questionnaire has only content and trainer rating sections", () => {
-  assert.deepEqual(sections.map((section) => section.key), ["content", "presentation"]);
+test("the active questionnaire has only the trainer rating section", () => {
+  assert.deepEqual(sections.map((section) => section.key), ["presentation"]);
   assert.equal(sections[0].questions.length, 4);
-  assert.equal(sections[1].questions.length, 4);
   assert.equal(sections[0].questions[1].label, "Was the training useful for your work?");
 });
 
