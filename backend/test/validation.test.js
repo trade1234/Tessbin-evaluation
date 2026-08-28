@@ -79,8 +79,16 @@ test("date filters include the complete final day and reject reversed ranges", (
   const result = buildEvaluationFilters({ dateFrom: "2026-05-01", dateTo: "2026-05-31" });
   assert.equal(result.filters.trainingDate.$gte.toISOString(), "2026-05-01T00:00:00.000Z");
   assert.equal(result.filters.trainingDate.$lte.toISOString(), "2026-05-31T23:59:59.999Z");
+  const submittedResult = buildEvaluationFilters({
+    dateFrom: "2026-08-01",
+    dateTo: "2026-08-31",
+    dateField: "submitted"
+  });
+  assert.equal(submittedResult.filters.createdAt.$gte.toISOString(), "2026-08-01T00:00:00.000Z");
+  assert.equal(submittedResult.filters.createdAt.$lte.toISOString(), "2026-08-31T23:59:59.999Z");
   assert.match(buildEvaluationFilters({ dateFrom: "2026-06-01", dateTo: "2026-05-01" }).error, /cannot be after/);
   assert.match(buildEvaluationFilters({ dateFrom: "2026-02-31" }).error, /Invalid date/);
+  assert.match(buildEvaluationFilters({ dateField: "unknown" }).error, /Invalid date field/);
 });
 
 test("CSV values escape quotes and neutralize spreadsheet formulas", () => {

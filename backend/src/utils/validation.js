@@ -114,12 +114,17 @@ export function buildEvaluationFilters(query = {}) {
   const batchId = cleanString(query.batchId);
   const dateFrom = cleanString(query.dateFrom);
   const dateTo = cleanString(query.dateTo);
+  const dateField = cleanString(query.dateField);
 
   if (courseId) filters.courseId = courseId;
   if (batchId) filters.batchId = batchId;
 
   if ((dateFrom && !datePattern.test(dateFrom)) || (dateTo && !datePattern.test(dateTo))) {
     return { error: "Dates must use YYYY-MM-DD format." };
+  }
+
+  if (dateField && dateField !== "submitted") {
+    return { error: "Invalid date field." };
   }
 
   if (dateFrom || dateTo) {
@@ -136,9 +141,10 @@ export function buildEvaluationFilters(query = {}) {
       return { error: "The from date cannot be after the to date." };
     }
 
-    filters.trainingDate = {};
-    if (from) filters.trainingDate.$gte = from;
-    if (to) filters.trainingDate.$lte = to;
+    const mongoDateField = dateField === "submitted" ? "createdAt" : "trainingDate";
+    filters[mongoDateField] = {};
+    if (from) filters[mongoDateField].$gte = from;
+    if (to) filters[mongoDateField].$lte = to;
   }
 
   return { filters };

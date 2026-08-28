@@ -1,0 +1,11 @@
+{
+  "name": "tesbinn-evaluation-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "test": "node --test test/validation.test.js test/serverless.test.js"
+  }
+}

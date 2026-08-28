@@ -2,8 +2,17 @@ import { useEffect, useState } from "react";
 import SummaryBar from "../components/SummaryBar.jsx";
 import TesbinnLogo from "../components/TesbinnLogo.jsx";
 import { Link, useNavigate } from "../lib/router.jsx";
+import { sections } from "../../../shared/formDefinition.js";
 
 import { apiUrl } from "../config/api.js";
+
+const currentDate = new Date();
+const recordsPerPage = 10;
+const monthOptions = Array.from({ length: 12 }, (_, index) => ({
+  value: String(index),
+  label: new Intl.DateTimeFormat(undefined, { month: "long" }).format(new Date(2000, index, 1))
+}));
+const yearOptions = Array.from({ length: 11 }, (_, index) => currentDate.getFullYear() - index);
 
 function getAuthHeaders() {
   return {
@@ -27,24 +36,195 @@ function truncateText(value, maxLength = 140) {
   return value.length > maxLength ? `${value.slice(0, maxLength).trim()}...` : value;
 }
 
+function toDateInputValue(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getPeriodRange(period) {
+  if (period === "all") {
+    return { dateFrom: "", dateTo: "" };
+  }
+
+  const today = new Date();
+  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const end = new Date(start);
+
+  if (period === "weekly") {
+    const daysSinceMonday = (start.getDay() + 6) % 7;
+    start.setDate(start.getDate() - daysSinceMonday);
+    end.setDate(start.getDate() + 6);
+  } else if (period === "monthly") {
+    start.setDate(1);
+    end.setMonth(start.getMonth() + 1, 0);
+  } else if (period === "yearly") {
+    start.setMonth(0, 1);
+    end.setMonth(11, 31);
+  }
+
+  return {
+    dateFrom: toDateInputValue(start),
+    dateTo: toDateInputValue(end)
+  };
+}
+
+function getMonthRange(year, month) {
+  const start = new Date(Number(year), Number(month), 1);
+  const end = new Date(Number(year), Number(month) + 1, 0);
+
+  return {
+    dateFrom: toDateInputValue(start),
+    dateTo: toDateInputValue(end)
+  };
+}
+
+function DetailItem({ label, value, wide = false }) {
+  return (
+    <div className={`admin-detail-item${wide ? " admin-detail-item-wide" : ""}`}>
+      <span>{label}</span>
+      <strong>{value || "Not provided"}</strong>
+    </div>
+  );
+}
+
+function SubmissionDetails({ evaluation, onClose }) {
+  const referrals = (evaluation.referrals || []).filter(
+    (item) => item.name || item.phoneNumber || item.emailAddress || item.address
+  );
+
+  return (
+    <div className="admin-detail-overlay" role="presentation" onMouseDown={onClose}>
+      <section
+        aria-labelledby="submission-detail-title"
+        aria-modal="true"
+        className="admin-detail-dialog"
+        onMouseDown={(event) => event.stopPropagation()}
+        role="dialog"
+      >
+        <header className="admin-detail-header">
+          <div>
+            <p className="admin-kicker">Evaluation Record</p>
+            <h2 id="submission-detail-title">Submission Details</h2>
+            <span>{new Date(evaluation.createdAt).toLocaleString()}</span>
+          </div>
+          <button aria-label="Close submission details" className="admin-detail-close" onClick={onClose} type="button">
+            ×
+          </button>
+        </header>
+
+        <div className="admin-detail-body">
+          <section className="admin-detail-section">
+            <h3>Training Information</h3>
+            <div className="admin-detail-grid">
+              <DetailItem label="Course" value={evaluation.courseName} />
+              <DetailItem label="Batch" value={evaluation.batchName} />
+              <DetailItem label="Training Date" value={formatDateLabel(evaluation.trainingDate)} />
+              <DetailItem label="Instructor" value={evaluation.instructorName} />
+              <DetailItem label="Session Type" value={evaluation.sessionType} />
+              <DetailItem label="Session" value={evaluation.sessionLabel} />
+            </div>
+          </section>
+
+          <section className="admin-detail-section">
+            <h3>Trainee Information</h3>
+            <div className="admin-detail-grid">
+              <DetailItem label="Email" value={evaluation.traineeEmail} />
+              <DetailItem label="Phone Number" value={evaluation.traineePhoneNumber} />
+            </div>
+          </section>
+
+          {sections.map((section) => (
+            <section className="admin-detail-section" key={section.key}>
+              <h3>{section.title}</h3>
+              <div className="admin-detail-rating-list">
+                {section.questions.map((question) => (
+                  <div className="admin-detail-rating" key={question.key}>
+                    <span>{question.label}</span>
+                    <strong>{evaluation.ratings?.[question.key] || "Not provided"}</strong>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ))}
+
+          <section className="admin-detail-section">
+            <h3>Feedback</h3>
+            <div className="admin-detail-grid">
+              <DetailItem label="Overall Rating" value={evaluation.overallRating} />
+              <DetailItem
+                label="Heard From"
+                value={evaluation.heardFrom === "Other" && evaluation.heardFromOther
+                  ? `Other: ${evaluation.heardFromOther}`
+                  : evaluation.heardFrom}
+              />
+              <DetailItem label="Participation Factors" value={evaluation.participationFactors} wide />
+              <DetailItem label="Improvement Suggestions" value={evaluation.improvementSuggestions} wide />
+              <DetailItem label="Requested Follow-up Trainings" value={evaluation.followUpTrainings} wide />
+            </div>
+          </section>
+
+          <section className="admin-detail-section">
+            <h3>Referrals</h3>
+            {referrals.length ? (
+              <div className="admin-detail-referrals">
+                {referrals.map((referral, index) => (
+                  <article className="admin-detail-referral" key={`${evaluation._id}-referral-${index}`}>
+                    <strong>Referral {index + 1}</strong>
+                    <span>{referral.name || "Name not provided"}</span>
+                    <span>{referral.phoneNumber || "Phone not provided"}</span>
+                    <span>{referral.emailAddress || "Email not provided"}</span>
+                    <span>{referral.address || "Address not provided"}</span>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <p className="admin-empty-note">No referrals were included with this submission.</p>
+            )}
+          </section>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export default function AdminDashboardPage() {
   const navigate = useNavigate();
   const [catalog, setCatalog] = useState([]);
-  const [filters, setFilters] = useState({ courseId: "", batchId: "", dateFrom: "", dateTo: "" });
+  const [filters, setFilters] = useState({
+    courseId: "",
+    batchId: "",
+    dateFrom: "",
+    dateTo: "",
+    dateField: "submitted"
+  });
+  const [period, setPeriod] = useState("all");
+  const [calendarDate, setCalendarDate] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState(String(currentDate.getMonth()));
+  const [selectedYear, setSelectedYear] = useState(String(currentDate.getFullYear()));
   const [summary, setSummary] = useState({ totalSubmissions: 0, overallCounts: {}, questionAverages: [] });
   const [evaluations, setEvaluations] = useState([]);
   const [error, setError] = useState("");
   const [isExporting, setIsExporting] = useState(false);
+  const [selectedEvaluation, setSelectedEvaluation] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const selectedCourse = catalog.find((item) => item.courseId === filters.courseId);
   const selectedBatch = selectedCourse?.batches?.find((item) => item.batchId === filters.batchId);
   const uniqueCourses = new Set(evaluations.map((item) => item.courseName)).size;
   const latestSubmission = evaluations.length ? new Date(evaluations[0].createdAt).toLocaleString() : "No submissions yet";
+  const totalPages = Math.max(1, Math.ceil(evaluations.length / recordsPerPage));
+  const pageStart = (currentPage - 1) * recordsPerPage;
+  const visibleEvaluations = evaluations.slice(pageStart, pageStart + recordsPerPage);
+  const visibleStart = evaluations.length ? pageStart + 1 : 0;
+  const visibleEnd = Math.min(pageStart + recordsPerPage, evaluations.length);
   const activeFilterSummary = [
     selectedCourse?.courseName || "All courses",
     selectedBatch ? selectedBatch.batchName : null,
-    filters.dateFrom ? `From ${formatDateLabel(filters.dateFrom)}` : null,
-    filters.dateTo ? `To ${formatDateLabel(filters.dateTo)}` : null
+    calendarDate ? `Date ${formatDateLabel(calendarDate)}` : null,
+    !calendarDate && filters.dateFrom ? `From ${formatDateLabel(filters.dateFrom)}` : null,
+    !calendarDate && filters.dateTo ? `To ${formatDateLabel(filters.dateTo)}` : null
   ]
     .filter(Boolean)
     .join(" | ");
@@ -120,8 +300,26 @@ export default function AdminDashboardPage() {
   }
 
   useEffect(() => {
+    setCurrentPage(1);
     loadData().catch(() => setError("Failed to load dashboard data."));
   }, [filters.courseId, filters.batchId, filters.dateFrom, filters.dateTo]);
+
+  useEffect(() => {
+    if (!selectedEvaluation) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") setSelectedEvaluation(null);
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [selectedEvaluation]);
 
   function handleLogout() {
     localStorage.removeItem("adminToken");
@@ -129,7 +327,48 @@ export default function AdminDashboardPage() {
   }
 
   function handleResetFilters() {
-    setFilters({ courseId: "", batchId: "", dateFrom: "", dateTo: "" });
+    setPeriod("all");
+    setCalendarDate("");
+    setSelectedMonth(String(currentDate.getMonth()));
+    setSelectedYear(String(currentDate.getFullYear()));
+    setFilters({ courseId: "", batchId: "", dateFrom: "", dateTo: "", dateField: "submitted" });
+  }
+
+  function handlePeriodChange(event) {
+    const nextPeriod = event.target.value;
+    setPeriod(nextPeriod);
+
+    if (nextPeriod !== "custom") {
+      setCalendarDate("");
+      const dateRange = nextPeriod === "monthly"
+        ? getMonthRange(selectedYear, selectedMonth)
+        : getPeriodRange(nextPeriod);
+      setFilters((current) => ({ ...current, ...dateRange }));
+    }
+  }
+
+  function handleMonthSelection(month = selectedMonth, year = selectedYear) {
+    setSelectedMonth(month);
+    setSelectedYear(year);
+    setPeriod("monthly");
+    setCalendarDate("");
+    setFilters((current) => ({ ...current, ...getMonthRange(year, month) }));
+  }
+
+  function handleDateChange(field, value) {
+    setPeriod("custom");
+    setCalendarDate("");
+    setFilters((current) => ({ ...current, [field]: value }));
+  }
+
+  function handleCalendarDateChange(value) {
+    setCalendarDate(value);
+    setPeriod(value ? "custom" : "all");
+    setFilters((current) => ({
+      ...current,
+      dateFrom: value,
+      dateTo: value
+    }));
   }
 
   async function handleExport() {
@@ -203,6 +442,51 @@ export default function AdminDashboardPage() {
 
             <div className="admin-filter-grid admin-filter-grid-sidebar">
               <label className="admin-field">
+                <span>Time Period</span>
+                <select value={period} onChange={handlePeriodChange}>
+                  <option value="all">All time</option>
+                  <option value="daily">Daily (today)</option>
+                  <option value="weekly">Weekly (this week)</option>
+                  <option value="monthly">Monthly (this month)</option>
+                  <option value="yearly">Yearly (this year)</option>
+                  <option value="custom">Custom range</option>
+                </select>
+              </label>
+              {period === "monthly" ? (
+                <>
+                  <label className="admin-field">
+                    <span>Month</span>
+                    <select
+                      value={selectedMonth}
+                      onChange={(event) => handleMonthSelection(event.target.value, selectedYear)}
+                    >
+                      {monthOptions.map((month) => (
+                        <option key={month.value} value={month.value}>{month.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="admin-field">
+                    <span>Year</span>
+                    <select
+                      value={selectedYear}
+                      onChange={(event) => handleMonthSelection(selectedMonth, event.target.value)}
+                    >
+                      {yearOptions.map((year) => (
+                        <option key={year} value={year}>{year}</option>
+                      ))}
+                    </select>
+                  </label>
+                </>
+              ) : null}
+              <label className="admin-field">
+                <span>Submission Calendar Date</span>
+                <input
+                  type="date"
+                  value={calendarDate}
+                  onChange={(event) => handleCalendarDateChange(event.target.value)}
+                />
+              </label>
+              <label className="admin-field">
                 <span>Course</span>
                 <select
                   value={filters.courseId}
@@ -234,19 +518,19 @@ export default function AdminDashboardPage() {
                 </select>
               </label>
               <label className="admin-field">
-                <span>From Date</span>
+                <span>Submitted From</span>
                 <input
                   type="date"
                   value={filters.dateFrom}
-                  onChange={(event) => setFilters((current) => ({ ...current, dateFrom: event.target.value }))}
+                  onChange={(event) => handleDateChange("dateFrom", event.target.value)}
                 />
               </label>
               <label className="admin-field">
-                <span>To Date</span>
+                <span>Submitted To</span>
                 <input
                   type="date"
                   value={filters.dateTo}
-                  onChange={(event) => setFilters((current) => ({ ...current, dateTo: event.target.value }))}
+                  onChange={(event) => handleDateChange("dateTo", event.target.value)}
                 />
               </label>
             </div>
@@ -402,30 +686,71 @@ export default function AdminDashboardPage() {
                     <th>Training Date</th>
                     <th>Overall</th>
                     <th>Heard From</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {evaluations.map((item) => (
-                    <tr key={item._id}>
+                  {visibleEvaluations.map((item) => (
+                    <tr
+                      className="admin-record-row"
+                      key={item._id}
+                      onDoubleClick={() => setSelectedEvaluation(item)}
+                      title="Double-click to view submission details"
+                    >
                       <td>{new Date(item.createdAt).toLocaleString()}</td>
                       <td>{item.courseName}</td>
                       <td>{item.batchName || "Unassigned"}</td>
                       <td>{new Date(item.trainingDate).toLocaleDateString()}</td>
                       <td>{item.overallRating}</td>
                       <td>{item.heardFrom}</td>
+                      <td>
+                        <button
+                          className="admin-view-button"
+                          onClick={() => setSelectedEvaluation(item)}
+                          type="button"
+                        >
+                          View
+                        </button>
+                      </td>
                     </tr>
                   ))}
                   {!evaluations.length ? (
                     <tr>
-                      <td colSpan="6" className="admin-empty-cell">No submissions found for the current filters.</td>
+                      <td colSpan="7" className="admin-empty-cell">No submissions found for the current filters.</td>
                     </tr>
                   ) : null}
                 </tbody>
               </table>
             </div>
+            {evaluations.length ? (
+              <nav aria-label="Submission records pagination" className="admin-pagination">
+                <p>Showing {visibleStart}–{visibleEnd} of {evaluations.length} records</p>
+                <div className="admin-pagination-controls">
+                  <button
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                    type="button"
+                  >
+                    Previous
+                  </button>
+                  <span>Page {currentPage} of {totalPages}</span>
+                  <button
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                    type="button"
+                  >
+                    Next
+                  </button>
+                </div>
+              </nav>
+            ) : null}
           </section>
         </section>
       </div>
+
+      {selectedEvaluation ? (
+        <SubmissionDetails evaluation={selectedEvaluation} onClose={() => setSelectedEvaluation(null)} />
+      ) : null}
     </main>
   );
 }
