@@ -9,6 +9,7 @@ import { sendEvaluationSubmittedEmail } from "../services/emailService.js";
 import { validateEvaluationPayload } from "../utils/validation.js";
 
 const router = Router();
+const databaseOperationTimeoutMs = 5000;
 
 router.get("/metadata", async (_req, res) => {
   const catalog = await getTrainingCatalog();
@@ -45,7 +46,9 @@ router.post("/evaluations", async (req, res) => {
 
   let batch = null;
   try {
-    batch = await Batch.findOne({ batchId: payload.batchId, courseId: payload.courseId }).lean();
+    batch = await Batch.findOne({ batchId: payload.batchId, courseId: payload.courseId })
+      .maxTimeMS(databaseOperationTimeoutMs)
+      .lean();
   } catch (dbErr) {
     console.error("Failed to find evaluation batch:", dbErr.message);
     return res.status(503).json({
@@ -73,7 +76,7 @@ router.post("/evaluations", async (req, res) => {
 
   let evaluation = null;
   try {
-    evaluation = await Evaluation.create({
+    evaluation = new Evaluation({
       ...payload,
       courseName: course.courseName,
       batchId: batch.batchId,
@@ -83,6 +86,7 @@ router.post("/evaluations", async (req, res) => {
       instructorName: batch.instructorName || "",
       trainingDate: batch.trainingDate
     });
+    await evaluation.save({ timeoutMS: databaseOperationTimeoutMs });
   } catch (createErr) {
     console.error("Failed to save evaluation:", createErr.message);
     return res.status(503).json({
@@ -90,30 +94,24 @@ router.post("/evaluations", async (req, res) => {
     });
   }
 
+  // Confirm the database save before starting SMTP work. This guarantees that
+  // a slow or unavailable mail server can never delay the trainee's response.
+  res.status(201).json({
+    id: evaluation._id,
+    message: "Evaluation submitted successfully.",
+    emailScheduled: true
+  });
+
   const emailPromise = sendEvaluationSubmittedEmail(evaluation).catch((error) => {
     console.error("Failed to send evaluation notification email:", error?.message || error);
     return { delivered: false, reason: "send_failed" };
   });
 
-  // On Vercel, keep SMTP alive as background work without making the trainee's
-  // request wait for an external mail server. The adapter installs this helper.
   if (typeof req.vercelWaitUntil === "function") {
     req.vercelWaitUntil(emailPromise);
-
-    return res.status(201).json({
-      id: evaluation._id,
-      message: "Evaluation submitted successfully.",
-      emailScheduled: true
-    });
   }
 
-  // Email is a side effect. Once the evaluation is stored, SMTP must not keep
-  // the trainee waiting or turn a successful save into an apparent failure.
-  return res.status(201).json({
-    id: evaluation._id,
-    message: "Evaluation submitted successfully.",
-    emailScheduled: true
-  });
+  return undefined;
 });
 
 export default router;

@@ -23,7 +23,11 @@ export async function connectToDatabase() {
     connectionPromise = mongoose
       .connect(mongoUri, {
         serverSelectionTimeoutMS: 4000,
-        connectTimeoutMS: 4000
+        connectTimeoutMS: 4000,
+        socketTimeoutMS: 5000,
+        waitQueueTimeoutMS: 5000,
+        maxPoolSize: 5,
+        family: 4
       })
       .then(() => {
         console.log(`MongoDB connected: ${mongoose.connection.name}`);

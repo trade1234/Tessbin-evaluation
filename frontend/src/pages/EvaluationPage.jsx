@@ -5,7 +5,7 @@ import { overallOptions, ratingLabels, sections, sourceOptions } from "../../../
 import { apiUrl } from "../config/api.js";
 const draftStorageKey = "training-evaluation-draft-v3";
 const googleReviewUrl = "https://g.page/r/CWgOATTV5eTTEBM/review";
-const submissionTimeoutMs = 60000;
+const submissionTimeoutMs = 15000;
 
 function createInitialForm() {
   return {
